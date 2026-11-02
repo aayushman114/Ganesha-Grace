@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shopping Cart | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+
+    <script src="./js/cart.js" defer></script>
+    <script src="./js/auth-status.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Header -->
+
+    <header class="site-header">
+        <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+            Ganesha Grace
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="./index.html#home">Home</a>
+            <a href="./index.html#categories">Categories</a>
+            <a href="./index.html#featured">Featured Products</a>
+            <a href="./my-orders.html">My Orders</a>
+        </nav>
+
+        <div class="header-actions">
+            <div id="auth-status" class="auth-status">
+                <a href="./login.html" id="account-link">Log In</a>
+                <a href="./register.html" id="register-link">Create Account</a>
+            </div>
+
+            <button id="logout-button" class="logout-button" hidden>
+                Log Out
+            </button>
+
+            <a class="cart-link" href="./cart.html" aria-current="page">
+                Cart <span id="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Cart Section -->
+    <main class="cart-page container">
+
+        <section class="cart-heading">
+            <h1>Your Shopping Cart</h1>
+            <p>Review your selected skincare products.</p>
+        </section>
+
+        <!-- Empty Cart Message -->
+        <section id="empty-cart" class="empty-cart" hidden>
+            <h2>Your cart is empty</h2>
+            <p>Discover skincare products selected for your routine.</p>
+
+            <a href="./index.html" class="cart-button">
+                Explore Products
+            </a>
+        </section>
+
+        <!-- Cart Content -->
+        <section id="cart-content" hidden>
+
+            <div class="cart-layout">
+
+                <!-- Products -->
+                <div class="cart-items-section">
+                    <h2>Cart Items</h2>
+
+                    <div id="cart-items">
+                        <!-- Cart items will be inserted by JavaScript -->
+                    </div>
+
+                    <a href="./index.html" class="continue-shopping">
+                        ← Continue Shopping
+                    </a>
+                </div>
+
+                <!-- Order Summary -->
+                <aside class="cart-summary">
+                    <h2>Order Summary</h2>
+
+                    <div class="summary-row">
+                        <span>Total Items</span>
+                        <span id="summary-items">0</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal">NPR 0</span>
+                    </div>
+
+                    <p class="cart-note">
+                        Delivery charges and any applicable discounts
+                        will be calculated later.
+                    </p>
+
+                    <a href="./checkout.html" class="checkout-button">
+                        Proceed to Checkout
+                    </a>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p>
+            &copy; <span id="current-year"></span>
+            Ganesha Grace. All rights reserved.
+        </p>
+    </footer>
+
+</body>
+</html>

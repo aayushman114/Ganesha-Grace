@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ganesha Grace | Skincare & Beauty</title>
+
+    <meta
+        name="description"
+        content="Discover skincare and beauty products at Ganesha Grace."
+    >
+
+    <link rel="stylesheet" href="./css/style.css">
+
+    <script src="./js/auth-status.js"></script>
+    <script src="./js/app.js" defer></script>
+</head>
+
+<body>
+    <header class="site-header">
+        <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+            Ganesha Grace
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="./index.html#home">Home</a>
+            <a href="./index.html#categories">Categories</a>
+            <a href="./index.html#featured">Featured Products</a>
+            <a href="./my-orders.html">My Orders</a>
+        </nav>
+
+        <div class="header-actions">
+            <div id="auth-status" class="auth-status">
+                <a href="./login.html" id="account-link">Log In</a>
+                <a href="./register.html" id="register-link">Create Account</a>
+            </div>
+
+            <button id="logout-button" class="logout-button" hidden>
+                Log Out
+            </button>
+
+            <a class="cart-link" href="./cart.html">
+                Cart <span id="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="home">
+            <p class="eyebrow">YOUR BEAUTY, YOUR RITUAL</p>
+
+            <h1>Discover Your Everyday Glow</h1>
+
+            <p>
+                Explore skincare and beauty essentials
+                selected for your daily routine.
+            </p>
+
+            <a class="primary-button" href="#categories">
+                Explore Collection
+            </a>
+        </section>
+
+        <section class="categories" id="categories">
+            <h2>Explore Our Categories</h2>
+
+            <div class="category-grid">
+                <article class="category-card">
+                    <h3>Face Wash</h3>
+                    <p>Find a cleanser for your daily routine.</p>
+                </article>
+
+                <article class="category-card">
+                    <h3>Moisturizers</h3>
+                    <p>Explore everyday moisturizing products.</p>
+                </article>
+
+                <article class="category-card">
+                    <h3>Serums</h3>
+                    <p>Discover products for your skincare routine.</p>
+                </article>
+
+                <article class="category-card">
+                    <h3>Sunscreens</h3>
+                    <p>Browse sun protection products.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="featured" id="featured">
+            <div class="section-heading">
+                <p class="eyebrow">YOUR DAILY ESSENTIALS</p>
+                <h2>Discover Our Bestsellers</h2>
+                <p>Thoughtfully selected skincare for your everyday routine.</p>
+            </div>
+
+            <div class="product-grid" id="product-grid">
+                <!-- JavaScript will render products here -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> Ganesha Grace.</p>
+        <p>Skincare and beauty for your everyday routine.</p>
+    </footer>
+</body>
+</html>

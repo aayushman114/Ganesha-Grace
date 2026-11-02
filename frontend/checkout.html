@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Checkout | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="./js/checkout.js" defer></script>
+    <script src="./js/auth-status.js" defer></script>
+</head>
+
+<body>
+
+    <header class="site-header">
+        <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+            Ganesha Grace
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="./index.html#home">Home</a>
+            <a href="./index.html#categories">Categories</a>
+            <a href="./index.html#featured">Featured Products</a>
+            <a href="./my-orders.html">My Orders</a>
+        </nav>
+
+        <div class="header-actions">
+            <div id="auth-status" class="auth-status">
+                <a href="./login.html" id="account-link">Log In</a>
+                <a href="./register.html" id="register-link">Create Account</a>
+            </div>
+
+            <button id="logout-button" class="logout-button" hidden>
+                Log Out
+            </button>
+
+            <a class="cart-link" href="./cart.html">
+                Cart <span id="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="checkout-page container">
+        <div class="checkout-heading">
+            <h1>Checkout</h1>
+            <p>Enter your details to place your order.</p>
+        </div>
+
+        <div id="checkout-message" class="checkout-message" role="status" hidden></div>
+
+        <div id="empty-checkout" class="empty-cart" hidden>
+            <h2>Your cart is empty</h2>
+            <p>Add some products before proceeding to checkout.</p>
+            <a href="./index.html" class="cart-button">Explore Products</a>
+        </div>
+
+        <div id="checkout-content" class="checkout-layout" hidden>
+            <section class="checkout-form-section">
+                <h2>Delivery Information</h2>
+
+                <form id="checkout-form">
+                    <div class="form-field">
+                        <label for="customer-name">Full name *</label>
+                        <input
+                            id="customer-name"
+                            name="customerName"
+                            type="text"
+                            autocomplete="name"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="customer-email">Email address *</label>
+                        <input
+                            id="customer-email"
+                            name="email"
+                            type="email"
+                            autocomplete="email"
+                            maxlength="254"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="customer-phone">Phone number *</label>
+                        <input
+                            id="customer-phone"
+                            name="phone"
+                            type="tel"
+                            autocomplete="tel"
+                            maxlength="20"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="delivery-address">Delivery address *</label>
+                        <textarea
+                            id="delivery-address"
+                            name="address"
+                            rows="3"
+                            maxlength="500"
+                            autocomplete="street-address"
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="delivery-city">City *</label>
+                            <input
+                                id="delivery-city"
+                                name="city"
+                                type="text"
+                                maxlength="100"
+                                autocomplete="address-level2"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-field">
+                            <label for="delivery-postal">Postal code</label>
+                            <input
+                                id="delivery-postal"
+                                name="postalCode"
+                                type="text"
+                                maxlength="20"
+                                autocomplete="postal-code"
+                            >
+                        </div>
+                    </div>
+
+                    <h2 class="payment-heading">Payment Method</h2>
+
+                    <label class="payment-option">
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="COD"
+                            checked
+                        >
+
+                        <span>
+                            <strong>Cash on Delivery</strong>
+                            <small>Pay when your order arrives.</small>
+                        </span>
+                    </label>
+
+                    <p class="checkout-note">
+                        Your order will be submitted for processing.
+                        Delivery charges will be confirmed before dispatch.
+                    </p>
+
+                    <button
+                        id="place-order-button"
+                        class="cart-button"
+                        type="submit"
+                    >
+                        Place Order
+                    </button>
+                </form>
+            </section>
+
+            <aside class="checkout-summary">
+                <h2>Your Order</h2>
+
+                <div id="checkout-items"></div>
+
+                <div class="summary-row">
+                    <span>Total Items</span>
+                    <span id="checkout-item-count">0</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="checkout-subtotal">NPR 0</span>
+                </div>
+
+                <p class="checkout-note">
+                    Shipping charges, if applicable, are not included yet.
+                </p>
+
+                <a href="./cart.html" class="continue-shopping">
+                    ← Return to Cart
+                </a>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>
+            &copy; <span id="current-year"></span>
+            Ganesha Grace. All rights reserved.
+        </p>
+    </footer>
+</body>
+</html>

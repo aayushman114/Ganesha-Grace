@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Order Confirmation | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+    <!-- <script src="./js/auth-status.js" defer></script>
+    <script src="./js/order-confirmation.js" defer></script> -->
+</head>
+
+<body>
+    
+    <header class="site-header">
+        <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+            Ganesha Grace
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="./index.html#home">Home</a>
+            <a href="./index.html#categories">Categories</a>
+            <a href="./index.html#featured">Featured Products</a>
+            <a href="./my-orders.html">My Orders</a>
+        </nav>
+
+        <div class="header-actions">
+            <div id="auth-status" class="auth-status">
+                <a href="./login.html" id="account-link">Log In</a>
+                <a href="./register.html" id="register-link">Create Account</a>
+            </div>
+
+            <button id="logout-button" class="logout-button" hidden>
+                Log Out
+            </button>
+
+            <a class="cart-link" href="./cart.html">
+                Cart <span id="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+
+    <main class="order-confirmation-container">
+        <section class="order-confirmation-card">
+            <div class="confirmation-icon" aria-hidden="true">✓</div>
+
+            <h1 id="confirmation-title">Your Order</h1>
+
+            <p id="confirmation-message" role="status" aria-live="polite">
+                Retrieving your order details...
+            </p>
+
+            <div id="order-details" hidden>
+                <div class="order-summary-heading">
+                    <h2>Order Summary</h2>
+                    <p>
+                        Order number:
+                        <strong id="order-number"></strong>
+                    </p>
+                    <p>
+                        Order date:
+                        <strong id="order-date"></strong>
+                    </p>
+                </div>
+
+                <div class="order-status-grid">
+                    <div>
+                        <span>Order status</span>
+                        <strong id="order-status"></strong>
+                    </div>
+
+                    <div>
+                        <span>Payment method</span>
+                        <strong id="payment-method"></strong>
+                    </div>
+
+                    <div>
+                        <span>Payment status</span>
+                        <strong id="payment-status"></strong>
+                    </div>
+                </div>
+
+                <h2 class="order-items-heading">Items Ordered</h2>
+
+                <div id="order-items"></div>
+
+                <div class="order-totals">
+                    <div>
+                        <span>Subtotal</span>
+                        <span id="order-subtotal"></span>
+                    </div>
+
+                    <div>
+                        <span>Delivery charge</span>
+                        <span id="delivery-charge"></span>
+                    </div>
+
+                    <div class="order-grand-total">
+                        <span>Total</span>
+                        <strong id="order-total"></strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="confirmation-actions">
+                <a href="./index.html" class="confirmation-primary-button">
+                    Continue Shopping
+                </a>
+
+                <a href="./account.html" class="confirmation-secondary-button">
+                    View My Account
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script src="./js/auth-status.js" defer></script>
+    <script src="./js/order-confirmation.js" defer></script>
+</body>
+</html>

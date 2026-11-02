@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "./src/generated/prisma-cjs-js",
+    "rootDir": "./src/generated/prisma-cjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true
+  },
+  "include": ["src/generated/prisma-cjs/**/*.ts"],
+  "exclude": ["src/generated/prisma-cjs/**/*.d.ts"]
+}

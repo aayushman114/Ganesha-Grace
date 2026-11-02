@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Log In | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="js/auth-status.js" defer></script>
+    <script src="js/login.js" defer></script>
+</head>
+
+<body>
+    <!-- Login Form -->
+    <main class="auth-container">
+        <h1>Welcome Back</h1>
+
+        <p class="auth-description">
+            Log in to your Ganesha Grace account to continue shopping.
+        </p>
+
+        <form id="login-form" class="auth-form">
+            <div class="form-group">
+                <label for="email">Email address</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    autocomplete="email"
+                    maxlength="254"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <button
+                type="submit"
+                id="login-button"
+                class="auth-submit"
+            >
+                Log In
+            </button>
+
+            <p
+                id="login-message"
+                class="auth-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></p>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account?
+            <a href="./register.html">Create an account</a>
+        </div>
+
+        <a href="./index.html" class="auth-home">Back to Home</a>
+    </main>
+
+</body>
+</html>
