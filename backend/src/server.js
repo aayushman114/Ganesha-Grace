@@ -310,6 +310,165 @@ app.get("/api/orders", async (req, res) => {
 });
 
 
+// ============================================
+// CANCEL CUSTOMER ORDER
+// ============================================
+
+app.post("/api/orders/:orderNumber/cancel", async (req, res) => {
+    try {
+        // 1. Authenticate the customer.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to cancel your order."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired. Please log in again."
+            });
+        }
+
+        if (session.user.role !== "CUSTOMER") {
+            return res.status(403).json({
+                success: false,
+                message: "A customer account is required."
+            });
+        }
+
+        // 2. Validate the order number.
+        const orderNumber = req.params.orderNumber;
+
+        if (
+            typeof orderNumber !== "string" ||
+            !orderNumber.trim() ||
+            orderNumber.length > 40
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid order number."
+            });
+        }
+
+        // 3. Restore stock and cancel the order atomically.
+        const cancelledOrder = await prisma.$transaction(async (tx) => {
+
+            // Find an order belonging to this customer.
+            const order = await tx.order.findFirst({
+                where: {
+                    orderNumber: orderNumber.trim(),
+                    userId: session.user.id
+                },
+                include: {
+                    items: {
+                        select: {
+                            productId: true,
+                            productName: true,
+                            quantity: true
+                        }
+                    }
+                }
+            });
+
+            if (!order) {
+                const error = new Error("Order not found.");
+                error.statusCode = 404;
+                throw error;
+            }
+
+            // Only pending orders can be cancelled.
+            if (order.status !== "PENDING") {
+                const error = new Error(
+                    `This order cannot be cancelled because its current status is ${order.status}.`
+                );
+                error.statusCode = 409;
+                throw error;
+            }
+
+            // Conditional update prevents duplicate stock restoration
+            // if cancellation requests arrive simultaneously.
+            const statusUpdate = await tx.order.updateMany({
+                where: {
+                    id: order.id,
+                    userId: session.user.id,
+                    status: "PENDING"
+                },
+                data: {
+                    status: "CANCELLED"
+                }
+            });
+
+            if (statusUpdate.count !== 1) {
+                const error = new Error(
+                    "This order has already been cancelled or its status has changed."
+                );
+                error.statusCode = 409;
+                throw error;
+            }
+
+            // Restore the stock for every ordered product.
+            for (const item of order.items) {
+                await tx.product.update({
+                    where: {
+                        id: item.productId
+                    },
+                    data: {
+                        stock: {
+                            increment: item.quantity
+                        }
+                    }
+                });
+            }
+
+            return {
+                orderNumber: order.orderNumber,
+                status: "CANCELLED"
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Your order has been cancelled successfully. Stock has been restored.",
+            data: cancelledOrder
+        });
+
+    } catch (error) {
+
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        console.error("Order cancellation failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to cancel your order right now."
+        });
+    }
+});
+
+
+
 // GET /api/auth/me
 app.get("/api/auth/me", async (req, res) => {
     try {
