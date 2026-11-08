@@ -19,6 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextButton = document.getElementById("next-page");
     const paginationInfo = document.getElementById("pagination-info");
 
+    // Modal elements
+    const orderModal = document.getElementById("order-details-modal");
+    const orderDetailsContent = document.getElementById("order-details-content");
+    const closeModalButton = document.getElementById("close-order-modal");
+    const closeOverlay = document.getElementById("close-order-overlay");
+
     let currentPage = 1;
     const pageSize = 20;
     let totalPages = 1;
@@ -36,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     async function checkAdminAccess() {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/me`, {
-                method: "GET",
                 credentials: "include"
             });
 
@@ -56,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
         } catch (error) {
             console.error("Admin authentication error:", error);
-            showMessage("Unable to verify your account. Please try again.");
+            showMessage("Unable to verify your account.");
             return false;
         }
     }
@@ -66,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
             style: "currency",
             currency: "NPR",
             maximumFractionDigits: 2
-        }).format(Number(amount));
+        }).format(Number(amount) || 0);
     }
 
     function formatDate(dateValue) {
@@ -85,28 +90,169 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function createCell(value, className = "") {
-        const cell = document.createElement("td");
-        cell.textContent = value ?? "—";
+    function createElement(tag, text = "", className = "") {
+        const element = document.createElement(tag);
+        element.textContent = text;
 
         if (className) {
-            cell.className = className;
+            element.className = className;
         }
 
-        return cell;
+        return element;
     }
+
+    function addDetail(parent, label, value) {
+        const paragraph = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = `${label}: `;
+        paragraph.append(strong, document.createTextNode(value ?? "—"));
+
+        parent.appendChild(paragraph);
+    }
+
+    function createDetailCard(title, details) {
+        const card = createElement("div", "", "order-detail-card");
+        card.appendChild(createElement("h3", title));
+
+        details.forEach(([label, value]) => {
+            addDetail(card, label, value);
+        });
+
+        return card;
+    }
+
+    function openOrderDetails(order) {
+        orderDetailsContent.replaceChildren();
+
+        document.getElementById("order-modal-title").textContent =
+            `Order ${order.orderNumber}`;
+
+        const detailGrid = createElement("div", "", "order-detail-grid");
+
+        // Customer information
+        detailGrid.appendChild(createDetailCard("Customer Information", [
+            ["Name", order.customerName],
+            ["Email", order.email],
+            ["Phone", order.phone]
+        ]));
+
+        // Delivery information
+        detailGrid.appendChild(createDetailCard("Delivery Address", [
+            ["Address", order.address],
+            ["City", order.city],
+            ["Postal Code", order.postalCode || "Not provided"]
+        ]));
+
+        // Order information
+        detailGrid.appendChild(createDetailCard("Order Information", [
+            ["Order Number", order.orderNumber],
+            ["Order Date", formatDate(order.createdAt)],
+            ["Last Updated", formatDate(order.updatedAt)],
+            ["Status", order.status]
+        ]));
+
+        // Payment information
+        detailGrid.appendChild(createDetailCard("Payment Information", [
+            ["Payment Method", order.paymentMethod],
+            ["Payment Status", order.paymentStatus]
+        ]));
+
+        orderDetailsContent.appendChild(detailGrid);
+
+        // Product items heading
+        orderDetailsContent.appendChild(
+            createElement("h3", "Ordered Products", "order-items-heading")
+        );
+
+        // Product table
+        const tableContainer = createElement("div", ""); 
+        tableContainer.style.overflowX = "auto";
+
+        const itemsTable = createElement("table", "", "order-items-table");
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        ["Product", "Unit Price", "Quantity", "Line Total"].forEach(label => {
+            headerRow.appendChild(createElement("th", label));
+        });
+
+        thead.appendChild(headerRow);
+        itemsTable.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        (order.items || []).forEach(item => {
+            const row = document.createElement("tr");
+
+            row.appendChild(createElement("td", item.productName));
+            row.appendChild(createElement("td", formatPrice(item.unitPrice)));
+            row.appendChild(createElement("td", String(item.quantity)));
+            row.appendChild(createElement("td", formatPrice(item.lineTotal)));
+
+            tbody.appendChild(row);
+        });
+
+        if (!order.items || order.items.length === 0) {
+            const row = document.createElement("tr");
+            const cell = createElement("td", "No product items found.");
+
+            cell.colSpan = 4;
+            row.appendChild(cell);
+            tbody.appendChild(row);
+        }
+
+        itemsTable.appendChild(tbody);
+        tableContainer.appendChild(itemsTable);
+        orderDetailsContent.appendChild(tableContainer);
+
+        // Order total summary
+        const summary = createElement("div", "", "order-total-summary");
+
+        const totals = [
+            ["Subtotal", order.subtotal],
+            ["Delivery Charge", order.deliveryCharge]
+        ];
+
+        totals.forEach(([label, amount]) => {
+            const row = createElement("div", "", "order-total-row");
+            row.appendChild(createElement("span", label));
+            row.appendChild(createElement("span", formatPrice(amount)));
+            summary.appendChild(row);
+        });
+
+        const grandTotal = createElement("div", "", "order-total-row grand-total");
+        grandTotal.appendChild(createElement("span", "Grand Total"));
+        grandTotal.appendChild(createElement("span", formatPrice(order.total)));
+
+        summary.appendChild(grandTotal);
+        orderDetailsContent.appendChild(summary);
+
+        orderModal.hidden = false;
+        closeModalButton.focus();
+    }
+
+    function closeOrderDetails() {
+        orderModal.hidden = true;
+    }
+
+    closeModalButton.addEventListener("click", closeOrderDetails);
+    closeOverlay.addEventListener("click", closeOrderDetails);
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !orderModal.hidden) {
+            closeOrderDetails();
+        }
+    });
 
     function renderOrders(orders) {
         tableBody.replaceChildren();
 
         if (!orders.length) {
             const row = document.createElement("tr");
-            const cell = document.createElement("td");
+            const cell = createElement("td", "No orders found.", "admin-table-message");
 
             cell.colSpan = 7;
-            cell.className = "admin-table-message";
-            cell.textContent = "No orders found.";
-
             row.appendChild(cell);
             tableBody.appendChild(row);
             return;
@@ -115,22 +261,35 @@ document.addEventListener("DOMContentLoaded", () => {
         orders.forEach(order => {
             const row = document.createElement("tr");
 
-            const itemCount = Array.isArray(order.items)
-                ? order.items.reduce(
-                    (total, item) => total + Number(item.quantity || 0),
-                    0
-                )
-                : 0;
+            const itemCount = (order.items || []).reduce(
+                (total, item) => total + Number(item.quantity || 0),
+                0
+            );
 
-            row.appendChild(createCell(order.orderNumber));
-            row.appendChild(createCell(
+            row.appendChild(createElement("td", order.orderNumber));
+            row.appendChild(createElement(
+                "td",
                 `${order.customerName}\n${order.email}`
             ));
-            row.appendChild(createCell(itemCount));
-            row.appendChild(createCell(formatPrice(order.total)));
-            row.appendChild(createCell(order.status));
-            row.appendChild(createCell(formatDate(order.createdAt)));
-            row.appendChild(createCell("Details coming soon"));
+            row.appendChild(createElement("td", String(itemCount)));
+            row.appendChild(createElement("td", formatPrice(order.total)));
+            row.appendChild(createElement("td", order.status));
+            row.appendChild(createElement("td", formatDate(order.createdAt)));
+
+            const actionCell = document.createElement("td");
+            const viewButton = createElement(
+                "button",
+                "View Details",
+                "admin-view-button"
+            );
+
+            viewButton.type = "button";
+            viewButton.addEventListener("click", () => {
+                openOrderDetails(order);
+            });
+
+            actionCell.appendChild(viewButton);
+            row.appendChild(actionCell);
 
             tableBody.appendChild(row);
         });
@@ -145,12 +304,13 @@ document.addEventListener("DOMContentLoaded", () => {
         tableBody.replaceChildren();
 
         const loadingRow = document.createElement("tr");
-        const loadingCell = document.createElement("td");
+        const loadingCell = createElement(
+            "td",
+            "Loading orders...",
+            "admin-table-message"
+        );
 
         loadingCell.colSpan = 7;
-        loadingCell.className = "admin-table-message";
-        loadingCell.textContent = "Loading orders...";
-
         loadingRow.appendChild(loadingCell);
         tableBody.appendChild(loadingRow);
 
@@ -168,10 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const response = await fetch(
                 `${API_BASE_URL}/admin/orders?${params.toString()}`,
-                {
-                    method: "GET",
-                    credentials: "include"
-                }
+                { credentials: "include" }
             );
 
             const result = await response.json();
@@ -182,10 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             renderOrders(result.data);
 
-            totalPages = Math.max(
-                1,
-                result.pagination.totalPages
-            );
+            totalPages = Math.max(1, result.pagination.totalPages);
 
             paginationInfo.textContent =
                 `Page ${currentPage} of ${totalPages}`;
@@ -204,11 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadDashboardStats() {
-        const statuses = [
-            "PENDING",
-            "PROCESSING",
-            "DELIVERED"
-        ];
+        const statuses = ["PENDING", "PROCESSING", "DELIVERED"];
 
         try {
             const requests = [
@@ -224,20 +374,20 @@ document.addEventListener("DOMContentLoaded", () => {
             ];
 
             const responses = await Promise.all(requests);
+
             const results = await Promise.all(
-                responses.map(response => {
+                responses.map(async response => {
                     if (!response.ok) {
                         throw new Error("Unable to load dashboard statistics.");
                     }
+
                     return response.json();
                 })
             );
 
-            results.forEach(result => {
-                if (!result.success) {
-                    throw new Error("Statistics response was unsuccessful.");
-                }
-            });
+            if (results.some(result => !result.success)) {
+                throw new Error("Statistics response was unsuccessful.");
+            }
 
             totalOrdersElement.textContent =
                 results[0].pagination.totalOrders;
