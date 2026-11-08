@@ -311,6 +311,189 @@ app.get("/api/orders", async (req, res) => {
 
 
 // ============================================
+// ADMIN - GET ALL CUSTOMER ORDERS
+// ============================================
+
+app.get("/api/admin/orders", async (req, res) => {
+    try {
+        // 1. Authenticate using the existing session cookie.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to access the admin dashboard."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        // 2. Only administrators can access this endpoint.
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 3. Validate pagination.
+        const page = Number(req.query.page || 1);
+        const limit = Number(req.query.limit || 20);
+
+        if (
+            !Number.isSafeInteger(page) ||
+            page < 1 ||
+            !Number.isSafeInteger(limit) ||
+            limit < 1 ||
+            limit > 100
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pagination parameters."
+            });
+        }
+
+        // 4. Validate optional status filter.
+        const allowedStatuses = [
+            "PENDING",
+            "PROCESSING",
+            "SHIPPED",
+            "DELIVERED",
+            "CANCELLED"
+        ];
+
+        const status = req.query.status
+            ? String(req.query.status).toUpperCase()
+            : null;
+
+        if (status && !allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid order status."
+            });
+        }
+
+        // 5. Validate optional search term.
+        const search = typeof req.query.search === "string"
+            ? req.query.search.trim()
+            : "";
+
+        if (search.length > 100) {
+            return res.status(400).json({
+                success: false,
+                message: "Search term must not exceed 100 characters."
+            });
+        }
+
+        // 6. Build database filters.
+        const where = {};
+
+        if (status) {
+            where.status = status;
+        }
+
+        if (search) {
+            where.OR = [
+                {
+                    orderNumber: {
+                        contains: search
+                    }
+                },
+                {
+                    customerName: {
+                        contains: search
+                    }
+                },
+                {
+                    email: {
+                        contains: search
+                    }
+                }
+            ];
+        }
+
+        // 7. Fetch orders and total count.
+        const [orders, totalOrders] = await prisma.$transaction([
+            prisma.order.findMany({
+                where,
+                orderBy: {
+                    createdAt: "desc"
+                },
+                skip: (page - 1) * limit,
+                take: limit,
+                select: {
+                    orderNumber: true,
+                    customerName: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    city: true,
+                    postalCode: true,
+                    subtotal: true,
+                    deliveryCharge: true,
+                    total: true,
+                    paymentMethod: true,
+                    paymentStatus: true,
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    items: {
+                        select: {
+                            productName: true,
+                            unitPrice: true,
+                            quantity: true,
+                            lineTotal: true
+                        }
+                    }
+                }
+            }),
+
+            prisma.order.count({ where })
+        ]);
+
+        // 8. Return paginated results.
+        return res.status(200).json({
+            success: true,
+            data: orders,
+            pagination: {
+                currentPage: page,
+                pageSize: limit,
+                totalOrders,
+                totalPages: Math.ceil(totalOrders / limit)
+            }
+        });
+
+    } catch (error) {
+        console.error("Admin order retrieval failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve customer orders."
+        });
+    }
+});
+
+
+
+// ============================================
 // CANCEL CUSTOMER ORDER
 // ============================================
 
