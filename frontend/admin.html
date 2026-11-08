@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/admin.css">
+</head>
+
+<body class="admin-body">
+
+    <div class="admin-layout">
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <a href="./index.html" class="admin-logo">
+                Ganesha Grace
+                <span>ADMIN PANEL</span>
+            </a>
+
+            <nav class="admin-nav" aria-label="Admin navigation">
+                <a href="#dashboard" class="active">Dashboard</a>
+                <a href="#orders">Orders</a>
+                <a href="./index.html">View Store</a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <p>Administrator</p>
+                <a href="./index.html">Back to Store</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+
+            <!-- Top Header -->
+            <header class="admin-topbar">
+                <div>
+                    <p class="admin-eyebrow">STORE MANAGEMENT</p>
+                    <h1>Admin Dashboard</h1>
+                </div>
+
+                <div class="admin-user">
+                    <span class="admin-user-icon">A</span>
+                    <span>Administrator</span>
+                </div>
+            </header>
+
+            <!-- Dashboard -->
+            <section id="dashboard" class="admin-section">
+
+                <div class="admin-section-heading">
+                    <div>
+                        <h2>Overview</h2>
+                        <p>Monitor your store's order activity.</p>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="admin-stats-grid">
+
+                    <article class="admin-stat-card">
+                        <p>Total Orders</p>
+                        <h3 id="total-orders">—</h3>
+                        <span>All orders</span>
+                    </article>
+
+                    <article class="admin-stat-card">
+                        <p>Pending Orders</p>
+                        <h3 id="pending-orders">—</h3>
+                        <span>Awaiting processing</span>
+                    </article>
+
+                    <article class="admin-stat-card">
+                        <p>Processing Orders</p>
+                        <h3 id="processing-orders">—</h3>
+                        <span>Currently processing</span>
+                    </article>
+
+                    <article class="admin-stat-card">
+                        <p>Delivered Orders</p>
+                        <h3 id="delivered-orders">—</h3>
+                        <span>Successfully delivered</span>
+                    </article>
+
+                </div>
+            </section>
+
+            <!-- Orders Management -->
+            <section id="orders" class="admin-section">
+
+                <div class="admin-section-heading">
+                    <div>
+                        <h2>Order Management</h2>
+                        <p>View and manage customer orders.</p>
+                    </div>
+
+                    <button type="button" id="refresh-orders"
+                            class="admin-refresh-button">
+                        Refresh Orders
+                    </button>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="admin-filters">
+
+                    <div class="admin-search">
+                        <label for="order-search">Search orders</label>
+                        <input
+                            type="search"
+                            id="order-search"
+                            placeholder="Order number, customer or email"
+                        >
+                    </div>
+
+                    <div class="admin-status-filter">
+                        <label for="status-filter">Order status</label>
+                        <select id="status-filter">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="apply-filters"
+                            class="admin-filter-button">
+                        Apply Filters
+                    </button>
+
+                </div>
+
+                <!-- Feedback Message -->
+                <div id="admin-message" class="admin-message" hidden
+                     role="status" aria-live="polite">
+                </div>
+
+                <!-- Orders Table -->
+                <div class="admin-table-container">
+
+                    <table class="admin-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Order Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="orders-table-body">
+                            <tr>
+                                <td colspan="7" class="admin-table-message">
+                                    Orders will appear here.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <!-- Pagination -->
+                <div class="admin-pagination">
+
+                    <button type="button" id="previous-page" disabled>
+                        Previous
+                    </button>
+
+                    <span id="pagination-info">Page 1</span>
+
+                    <button type="button" id="next-page" disabled>
+                        Next
+                    </button>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

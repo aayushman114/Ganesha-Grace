@@ -2049,3 +2049,41 @@ a {
         width: 100%;
     }
 }
+
+/* ========================================
+   ORDER CANCELLATION BUTTON
+======================================== */
+
+.my-orders-page .order-cancel-button {
+    padding: 12px 20px;
+    border: 1px solid #b34b55;
+    border-radius: 6px;
+    background: #fff;
+    color: #a12626;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.my-orders-page .order-cancel-button:hover:not(:disabled) {
+    background: #a12626;
+    color: #fff;
+}
+
+.my-orders-page .order-cancel-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.my-orders-page .order-cancel-feedback {
+    width: 100%;
+    margin: 10px 0 0;
+    color: #a12626;
+    font-size: 13px;
+}
+
+.my-orders-page .order-cancel-feedback[hidden] {
+    display: none;
+}

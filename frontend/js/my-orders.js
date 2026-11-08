@@ -131,6 +131,26 @@ function createOrderCard(order) {
 
     actions.appendChild(viewOrderLink);
 
+    // Show cancellation option only for pending orders.
+    if (order.status === "PENDING") {
+        const cancelButton = document.createElement("button");
+
+        cancelButton.type = "button";
+        cancelButton.className = "order-cancel-button";
+        cancelButton.textContent = "Cancel Order";
+
+        const feedback = document.createElement("p");
+        feedback.className = "order-cancel-feedback";
+        feedback.setAttribute("role", "status");
+        feedback.hidden = true;
+
+        cancelButton.addEventListener("click", () => {
+            handleCancelOrder(order.orderNumber, cancelButton, feedback);
+        });
+
+        actions.append(cancelButton, feedback);
+    }
+
     card.append(
         heading,
         details,
@@ -193,4 +213,57 @@ function formatLabel(value) {
         .toLowerCase()
         .replace(/_/g, " ")
         .replace(/\b\w/g, character => character.toUpperCase());
+}
+
+async function handleCancelOrder(orderNumber, button, feedback) {
+    const confirmed = window.confirm(
+        `Are you sure you want to cancel order ${orderNumber}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Cancelling...";
+
+    feedback.hidden = true;
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/orders/${encodeURIComponent(orderNumber)}/cancel`,
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    Accept: "application/json"
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.message || "Unable to cancel this order."
+            );
+        }
+
+        feedback.textContent = result.message;
+        feedback.hidden = false;
+
+        // Reload orders to display the updated status.
+        await loadOrders();
+
+    } catch (error) {
+        feedback.textContent =
+            error.message || "Something went wrong.";
+
+        feedback.hidden = false;
+
+        button.disabled = false;
+        button.textContent = "Cancel Order";
+
+        console.error("Order cancellation error:", error);
+    }
 }
