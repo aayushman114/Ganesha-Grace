@@ -160,6 +160,139 @@ document.addEventListener("DOMContentLoaded", () => {
 
         orderDetailsContent.appendChild(detailGrid);
 
+                // Admin order status management
+        const statusEditor = createElement("section", "", "order-status-editor");
+        statusEditor.appendChild(createElement("h3", "Manage Order Status"));
+
+        const currentStatus = createElement(
+            "p",
+            `Current status: ${order.status}`,
+            "current-order-status"
+        );
+        statusEditor.appendChild(currentStatus);
+
+        const allowedTransitions = {
+            PENDING: ["PROCESSING", "CANCELLED"],
+            PROCESSING: ["SHIPPED", "CANCELLED"],
+            SHIPPED: ["DELIVERED"],
+            DELIVERED: [],
+            CANCELLED: []
+        };
+
+        const availableStatuses = allowedTransitions[order.status] || [];
+
+        if (availableStatuses.length === 0) {
+            statusEditor.appendChild(
+                createElement("p", "No further status changes are available.")
+            );
+        } else {
+            const statusLabel = createElement("label", "New status");
+            statusLabel.htmlFor = "new-order-status";
+
+            const statusSelect = document.createElement("select");
+            statusSelect.id = "new-order-status";
+            statusSelect.className = "admin-status-select";
+
+            availableStatuses.forEach(status => {
+                const option = document.createElement("option");
+                option.value = status;
+                option.textContent = status;
+                statusSelect.appendChild(option);
+            });
+
+            const updateButton = createElement(
+                "button",
+                "Update Status",
+                "admin-update-status-button"
+            );
+            updateButton.type = "button";
+
+            const statusFeedback = createElement(
+                "p",
+                "",
+                "order-status-feedback"
+            );
+            statusFeedback.setAttribute("role", "status");
+            statusFeedback.setAttribute("aria-live", "polite");
+
+            updateButton.addEventListener("click", async () => {
+                const newStatus = statusSelect.value;
+
+                if (
+                    newStatus === "CANCELLED" &&
+                    !window.confirm(
+                        "Are you sure you want to cancel this order? Product stock will be restored."
+                    )
+                ) {
+                    return;
+                }
+
+                updateButton.disabled = true;
+                statusSelect.disabled = true;
+                statusFeedback.textContent = "Updating order status...";
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/admin/orders/${encodeURIComponent(order.orderNumber)}/status`,
+                        {
+                            method: "PATCH",
+                            credentials: "include",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                status: newStatus
+                            })
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        throw new Error(
+                            result.message || "Unable to update order status."
+                        );
+                    }
+
+                    order.status = result.data.status;
+                    order.updatedAt = new Date().toISOString();
+
+                    openOrderDetails(order);
+
+                    const updatedFeedback = createElement(
+                        "p",
+                        result.message || "Order status updated successfully.",
+                        "order-status-feedback success"
+                    );
+
+                    orderDetailsContent
+                        .querySelector(".order-status-editor")
+                        .appendChild(updatedFeedback);
+
+                    await Promise.all([
+                        loadOrders(),
+                        loadDashboardStats()
+                    ]);
+
+                } catch (error) {
+                    console.error("Order status update error:", error);
+                    statusFeedback.textContent = error.message;
+                    statusFeedback.classList.add("error");
+                    updateButton.disabled = false;
+                    statusSelect.disabled = false;
+                }
+            });
+
+            statusEditor.append(
+                statusLabel,
+                statusSelect,
+                updateButton,
+                statusFeedback
+            );
+        }
+
+        orderDetailsContent.appendChild(statusEditor);
+
         // Product items heading
         orderDetailsContent.appendChild(
             createElement("h3", "Ordered Products", "order-items-heading")

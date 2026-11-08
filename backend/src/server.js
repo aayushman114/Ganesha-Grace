@@ -742,6 +742,189 @@ app.post("/api/auth/logout", async (req, res) => {
 
 
 // ============================================
+// ADMIN - UPDATE ORDER STATUS
+// ============================================
+
+app.patch("/api/admin/orders/:orderNumber/status", async (req, res) => {
+    try {
+        // 1. Authenticate administrator.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to access this feature."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 2. Validate order number and requested status.
+        const orderNumber = req.params.orderNumber?.trim();
+        const newStatus = req.body?.status;
+
+        if (
+            !orderNumber ||
+            orderNumber.length > 40
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid order number."
+            });
+        }
+
+        const allowedStatuses = [
+            "PENDING",
+            "PROCESSING",
+            "SHIPPED",
+            "DELIVERED",
+            "CANCELLED"
+        ];
+
+        if (
+            typeof newStatus !== "string" ||
+            !allowedStatuses.includes(newStatus)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid order status."
+            });
+        }
+
+        // 3. Define permitted status transitions.
+        const allowedTransitions = {
+            PENDING: ["PROCESSING", "CANCELLED"],
+            PROCESSING: ["SHIPPED", "CANCELLED"],
+            SHIPPED: ["DELIVERED"],
+            DELIVERED: [],
+            CANCELLED: []
+        };
+
+        // 4. Update status inside a database transaction.
+        const updatedOrder = await prisma.$transaction(async (tx) => {
+
+            const order = await tx.order.findUnique({
+                where: { orderNumber },
+                include: {
+                    items: {
+                        select: {
+                            productId: true,
+                            productName: true,
+                            quantity: true
+                        }
+                    }
+                }
+            });
+
+            if (!order) {
+                const error = new Error("Order not found.");
+                error.statusCode = 404;
+                throw error;
+            }
+
+            if (!allowedTransitions[order.status]?.includes(newStatus)) {
+                const error = new Error(
+                    `Cannot change order status from ${order.status} to ${newStatus}.`
+                );
+                error.statusCode = 409;
+                throw error;
+            }
+
+            // Conditional update protects against concurrent changes.
+            const statusUpdate = await tx.order.updateMany({
+                where: {
+                    id: order.id,
+                    status: order.status
+                },
+                data: {
+                    status: newStatus
+                }
+            });
+
+            if (statusUpdate.count !== 1) {
+                const error = new Error(
+                    "The order status changed during this request. Refresh and try again."
+                );
+                error.statusCode = 409;
+                throw error;
+            }
+
+            // Restore product stock only when cancelling.
+            if (newStatus === "CANCELLED") {
+                for (const item of order.items) {
+                    await tx.product.update({
+                        where: {
+                            id: item.productId
+                        },
+                        data: {
+                            stock: {
+                                increment: item.quantity
+                            }
+                        }
+                    });
+                }
+            }
+
+            return {
+                orderNumber: order.orderNumber,
+                previousStatus: order.status,
+                status: newStatus
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: newStatus === "CANCELLED"
+                ? "Order cancelled successfully. Product stock has been restored."
+                : "Order status updated successfully.",
+            data: updatedOrder
+        });
+
+    } catch (error) {
+
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        console.error("Admin order status update failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update order status."
+        });
+    }
+});
+
+
+// ============================================
 // CUSTOMER REGISTRATION
 // ============================================
 

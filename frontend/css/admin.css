@@ -607,3 +607,83 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Admin Order Status Management */
+
+.order-status-editor {
+    display: grid;
+    gap: 12px;
+    margin: 22px 0;
+    padding: 18px;
+    border: 1px solid #eee2dc;
+    border-radius: 9px;
+    background: #fdfaf9;
+}
+
+.order-status-editor h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.current-order-status {
+    margin: 0;
+    color: #604f49;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-status-select {
+    width: 100%;
+    max-width: 300px;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid #e5d8d1;
+    border-radius: 7px;
+    background: #fff;
+    color: #34251f;
+    font: inherit;
+    font-size: 13px;
+}
+
+.admin-status-select:focus {
+    outline: 2px solid #d9b8c0;
+    border-color: #9c6474;
+}
+
+.admin-update-status-button {
+    width: fit-content;
+    min-height: 40px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 7px;
+    background: #9c6474;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-update-status-button:hover {
+    background: #794653;
+}
+
+.admin-update-status-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.order-status-feedback {
+    margin: 0;
+    color: #604f49;
+    font-size: 13px;
+}
+
+.order-status-feedback.success {
+    color: #247443;
+}
+
+.order-status-feedback.error {
+    color: #b42318;
+}
