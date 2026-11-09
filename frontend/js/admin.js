@@ -25,8 +25,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const productSearchInput = document.getElementById("product-search");
     const productStatusFilter = document.getElementById("product-status-filter");
     const refreshProductsButton = document.getElementById("refresh-products");
+    // Add Product modal elements
+    const productModal = document.getElementById("product-modal");
+    const addProductButton = document.getElementById("add-product-button");
+    const closeProductButton = document.getElementById("close-product-modal");
+    const closeProductOverlay = document.getElementById("close-product-overlay");
+    const cancelProductButton = document.getElementById("cancel-product-button");
+    const addProductForm = document.getElementById("add-product-form");
+    const saveProductButton = document.getElementById("save-product-button");
+    const productFormFeedback = document.getElementById("product-form-feedback");
+
+    const productCategorySelect = document.getElementById("product-category");
+    const productBrandSelect = document.getElementById("product-brand");
 
     let allProducts = [];
+    let allCategories = [];
+    let allBrands = [];
 
     // Modal elements
     const orderModal = document.getElementById("order-details-modal");
@@ -558,6 +572,128 @@ document.addEventListener("DOMContentLoaded", () => {
     // PRODUCT MANAGEMENT
     // ============================================
 
+    // Populate category and brand dropdowns
+    function populateProductDropdowns() {
+        productCategorySelect.replaceChildren();
+        productBrandSelect.replaceChildren();
+
+        const categoryPlaceholder = createElement(
+            "option",
+            "Select Category"
+        );
+        categoryPlaceholder.value = "";
+        productCategorySelect.appendChild(categoryPlaceholder);
+
+        allCategories.forEach(category => {
+            const option = createElement("option", category.name);
+            option.value = category.id;
+            productCategorySelect.appendChild(option);
+        });
+
+        const brandPlaceholder = createElement(
+            "option",
+            "Select Brand"
+        );
+        brandPlaceholder.value = "";
+        productBrandSelect.appendChild(brandPlaceholder);
+
+        allBrands.forEach(brand => {
+            const option = createElement("option", brand.name);
+            option.value = brand.id;
+            productBrandSelect.appendChild(option);
+        });
+    }
+
+    // Open modal
+    function openProductModal() {
+        addProductForm.reset();
+        productFormFeedback.textContent = "";
+        productFormFeedback.className = "product-form-feedback";
+
+        populateProductDropdowns();
+
+        productModal.hidden = false;
+        document.getElementById("product-name").focus();
+    }
+
+    // Close modal
+    function closeProductModal() {
+        productModal.hidden = true;
+    }
+
+    addProductButton.addEventListener("click", openProductModal);
+    closeProductButton.addEventListener("click", closeProductModal);
+    closeProductOverlay.addEventListener("click", closeProductModal);
+    cancelProductButton.addEventListener("click", closeProductModal);
+
+    addProductForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    productFormFeedback.textContent = "";
+    productFormFeedback.className = "product-form-feedback";
+
+    const formData = new FormData(addProductForm);
+
+    const productData = {
+        name: formData.get("name").trim(),
+        description: formData.get("description").trim() || null,
+        price: formData.get("price"),
+        rating: formData.get("rating") || null,
+        imageUrl: formData.get("imageUrl").trim() || null,
+        stock: Number(formData.get("stock")),
+        categoryId: Number(formData.get("categoryId")),
+        brandId: Number(formData.get("brandId"))
+    };
+
+    saveProductButton.disabled = true;
+    saveProductButton.textContent = "Saving...";
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/admin/products`,
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(productData)
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.message || "Unable to create product."
+            );
+        }
+
+        productFormFeedback.textContent =
+            "Product created successfully.";
+
+        productFormFeedback.classList.add("success");
+
+        addProductForm.reset();
+
+        await loadProducts();
+
+        closeProductModal();
+
+        showProductMessage("Product created successfully.");
+
+    } catch (error) {
+        console.error("Product creation error:", error);
+
+        productFormFeedback.textContent = error.message;
+        productFormFeedback.classList.add("error");
+
+    } finally {
+        saveProductButton.disabled = false;
+        saveProductButton.textContent = "Save Product";
+    }
+});
+
     function showProductMessage(message) {
         productMessage.textContent = message;
         productMessage.hidden = false;
@@ -729,6 +865,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             allProducts = result.data.products || [];
+            allCategories = result.data.categories || [];
+            allBrands = result.data.brands || [];
 
             renderProducts();
 
