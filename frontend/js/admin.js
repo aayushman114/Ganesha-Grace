@@ -745,6 +745,57 @@ document.addEventListener("DOMContentLoaded", () => {
         productMessage.hidden = true;
     }
 
+    
+    async function toggleProductStatus(product, button) {
+        const newStatus = !product.isActive;
+
+        const action = newStatus ? "activate" : "deactivate";
+
+        const confirmed = window.confirm(
+            `Are you sure you want to ${action} "${product.name}"?`
+        );
+
+        if (!confirmed) return;
+
+        button.disabled = true;
+        button.textContent = "Updating...";
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/admin/products/${product.id}/status`,
+                {
+                    method: "PATCH",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        isActive: newStatus
+                    })
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Unable to update product status."
+                );
+            }
+
+            await loadProducts();
+
+            showProductMessage(result.message);
+
+        } catch (error) {
+            console.error("Product status update error:", error);
+            showProductMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+
     function renderProducts() {
         productsTableBody.replaceChildren();
 
@@ -877,7 +928,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 openProductModal(product);
             });
 
-            actionCell.appendChild(editButton);
+            const statusButton = createElement(
+                "button",
+                product.isActive ? "Deactivate" : "Activate",
+                "admin-view-button"
+            );
+
+            statusButton.type = "button";
+            statusButton.style.marginLeft = "6px";
+
+            statusButton.addEventListener("click", () => {
+                toggleProductStatus(product, statusButton);
+            });
+
+            actionCell.append(editButton, statusButton);
             row.appendChild(actionCell);
 
             productsTableBody.appendChild(row);

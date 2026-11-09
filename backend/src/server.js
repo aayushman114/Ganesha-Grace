@@ -673,6 +673,113 @@ app.put("/api/admin/products/:id", async (req, res) => {
     }
 });
 
+
+// ============================================
+// ADMIN - ACTIVATE OR DEACTIVATE A PRODUCT
+// ============================================
+
+app.patch("/api/admin/products/:id/status", async (req, res) => {
+    try {
+        // 1. Authenticate admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to manage products."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        // 2. Verify administrator role.
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 3. Validate product ID.
+        const productId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(productId) || productId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID."
+            });
+        }
+
+        // 4. Validate requested status.
+        const { isActive } = req.body || {};
+
+        if (typeof isActive !== "boolean") {
+            return res.status(400).json({
+                success: false,
+                message: "Product status must be true or false."
+            });
+        }
+
+        // 5. Check whether the product exists.
+        const existingProduct = await prisma.product.findUnique({
+            where: { id: productId }
+        });
+
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found."
+            });
+        }
+
+        // 6. Update product status.
+        const updatedProduct = await prisma.product.update({
+            where: { id: productId },
+            data: { isActive },
+            select: {
+                id: true,
+                name: true,
+                isActive: true
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: isActive
+                ? "Product activated successfully."
+                : "Product deactivated successfully.",
+            data: updatedProduct
+        });
+
+    } catch (error) {
+        console.error("Product status update failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update product status."
+        });
+    }
+});
+
+
 // ============================================
 // START SERVER
 // ============================================
