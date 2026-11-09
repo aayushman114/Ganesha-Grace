@@ -904,10 +904,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 formatPrice(product.price)
             ));
 
-            row.appendChild(createElement(
-                "td",
-                String(product.stock)
-            ));
+            // Stock quantity and inventory status
+            const stockCell = document.createElement("td");
+            const stock = Number(product.stock);
+
+            stockCell.appendChild(
+                createElement("strong", String(stock))
+            );
+
+            let stockStatus;
+            let stockClass;
+
+            if (stock === 0) {
+                stockStatus = "Out of Stock";
+                stockClass = "stock-out";
+            } else if (stock <= 5) {
+                stockStatus = "Low Stock";
+                stockClass = "stock-low";
+            } else {
+                stockStatus = "In Stock";
+                stockClass = "stock-available";
+            }
+
+            stockCell.appendChild(
+                createElement("small", stockStatus, stockClass)
+            );
+
+            row.appendChild(stockCell);
 
             row.appendChild(createElement(
                 "td",

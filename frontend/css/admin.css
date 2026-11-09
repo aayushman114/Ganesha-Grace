@@ -875,3 +875,24 @@
         width: 100%;
     }
 }
+/* Product inventory status */
+.stock-out,
+.stock-low,
+.stock-available {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.stock-out {
+    color: #dc2626;
+}
+
+.stock-low {
+    color: #d97706;
+}
+
+.stock-available {
+    color: #16a34a;
+}
