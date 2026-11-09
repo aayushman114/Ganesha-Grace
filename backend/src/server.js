@@ -126,6 +126,97 @@ app.get("/api/products/:id", async (req, res) => {
     }
 });
 
+
+// ============================================
+// ADMIN - GET ALL PRODUCTS, CATEGORIES AND BRANDS
+// ============================================
+
+app.get("/api/admin/products", async (req, res) => {
+    try {
+        // 1. Authenticate the admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to access product management."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        // 2. Only administrators can access this endpoint.
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 3. Retrieve all products, including inactive products.
+        const [products, categories, brands] = await Promise.all([
+            prisma.product.findMany({
+                include: {
+                    category: true,
+                    brand: true
+                },
+                orderBy: {
+                    id: "desc"
+                }
+            }),
+
+            prisma.category.findMany({
+                orderBy: {
+                    name: "asc"
+                }
+            }),
+
+            prisma.brand.findMany({
+                orderBy: {
+                    name: "asc"
+                }
+            })
+        ]);
+
+        // 4. Return product management data.
+        return res.status(200).json({
+            success: true,
+            data: {
+                products,
+                categories,
+                brands
+            }
+        });
+
+    } catch (error) {
+        console.error("Admin product retrieval failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve product management data."
+        });
+    }
+});
+
+
 // ============================================
 // START SERVER
 // ============================================

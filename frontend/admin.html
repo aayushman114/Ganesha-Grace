@@ -22,11 +22,14 @@
                 <span>ADMIN PANEL</span>
             </a>
 
+            
             <nav class="admin-nav" aria-label="Admin navigation">
                 <a href="#dashboard" class="active">Dashboard</a>
                 <a href="#orders">Orders</a>
+                <a href="#products">Products</a>
                 <a href="./index.html">View Store</a>
             </nav>
+
 
             <div class="admin-sidebar-footer">
                 <p>Administrator</p>
@@ -184,6 +187,86 @@
                 </div>
 
             </section>
+
+            
+        <!-- Products Management -->
+        <section id="products" class="admin-section">
+
+            <div class="admin-section-heading">
+                <div>
+                    <h2>Product Management</h2>
+                    <p>Add, edit and manage your store products and inventory.</p>
+                </div>
+
+                <button type="button" id="add-product-button"
+                        class="admin-refresh-button">
+                    + Add Product
+                </button>
+            </div>
+
+            <!-- Product Search and Filters -->
+            <div class="admin-filters">
+
+                <div class="admin-search">
+                    <label for="product-search">Search products</label>
+                    <input
+                        type="search"
+                        id="product-search"
+                        placeholder="Search by product name"
+                    >
+                </div>
+
+                <div class="admin-status-filter">
+                    <label for="product-status-filter">Product status</label>
+                    <select id="product-status-filter">
+                        <option value="">All Products</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <button type="button" id="refresh-products"
+                        class="admin-filter-button">
+                    Refresh Products
+                </button>
+
+            </div>
+
+            <!-- Product Feedback -->
+            <div id="product-message" class="admin-message"
+                hidden role="status" aria-live="polite">
+            </div>
+
+            <!-- Products Table -->
+            <div class="admin-table-container">
+
+                <table class="admin-orders-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="products-table-body">
+                        <tr>
+                            <td colspan="8" class="admin-table-message">
+                                Products will appear here.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+        </section>
+
 
         </main>
         

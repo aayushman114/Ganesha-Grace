@@ -19,6 +19,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextButton = document.getElementById("next-page");
     const paginationInfo = document.getElementById("pagination-info");
 
+    // Product management elements
+    const productsTableBody = document.getElementById("products-table-body");
+    const productMessage = document.getElementById("product-message");
+    const productSearchInput = document.getElementById("product-search");
+    const productStatusFilter = document.getElementById("product-status-filter");
+    const refreshProductsButton = document.getElementById("refresh-products");
+
+    let allProducts = [];
+
     // Modal elements
     const orderModal = document.getElementById("order-details-modal");
     const orderDetailsContent = document.getElementById("order-details-content");
@@ -544,6 +553,206 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    
+    // ============================================
+    // PRODUCT MANAGEMENT
+    // ============================================
+
+    function showProductMessage(message) {
+        productMessage.textContent = message;
+        productMessage.hidden = false;
+    }
+
+    function hideProductMessage() {
+        productMessage.textContent = "";
+        productMessage.hidden = true;
+    }
+
+    function renderProducts() {
+        productsTableBody.replaceChildren();
+
+        const search = productSearchInput.value.trim().toLowerCase();
+        const status = productStatusFilter.value;
+
+        const filteredProducts = allProducts.filter(product => {
+            const matchesSearch =
+                product.name.toLowerCase().includes(search) ||
+                (product.brand?.name || "").toLowerCase().includes(search) ||
+                (product.category?.name || "").toLowerCase().includes(search);
+
+            const matchesStatus =
+                status === "" ||
+                String(product.isActive) === status;
+
+            return matchesSearch && matchesStatus;
+        });
+
+        if (filteredProducts.length === 0) {
+            const row = document.createElement("tr");
+            const cell = createElement(
+                "td",
+                "No products found.",
+                "admin-table-message"
+            );
+
+            cell.colSpan = 8;
+            row.appendChild(cell);
+            productsTableBody.appendChild(row);
+            return;
+        }
+
+        filteredProducts.forEach(product => {
+            const row = document.createElement("tr");
+
+            // Product image
+            const imageCell = document.createElement("td");
+            const image = document.createElement("img");
+
+            image.alt = product.name;
+            image.width = 50;
+            image.height = 50;
+            image.loading = "lazy";
+            image.style.objectFit = "cover";
+            image.style.borderRadius = "6px";
+
+            if (product.imageUrl) {
+                try {
+                    const imageUrl = new URL(
+                        product.imageUrl,
+                        window.location.origin
+                    );
+
+                    if (["http:", "https:"].includes(imageUrl.protocol)) {
+                        image.src = imageUrl.href;
+                    } else {
+                        image.alt = "Invalid image URL";
+                    }
+                } catch {
+                    image.alt = "Invalid image URL";
+                }
+            } else {
+                image.alt = "No product image";
+            }
+
+            image.onerror = () => {
+                image.removeAttribute("src");
+                image.alt = "Image unavailable";
+            };
+
+            imageCell.appendChild(image);
+
+            // Product information
+            const productCell = document.createElement("td");
+            productCell.appendChild(createElement("strong", product.name));
+
+            if (product.description) {
+                const description = createElement(
+                    "small",
+                    product.description
+                );
+
+                description.style.display = "block";
+                description.style.maxWidth = "220px";
+                description.style.marginTop = "5px";
+
+                productCell.appendChild(description);
+            }
+
+            row.appendChild(imageCell);
+            row.appendChild(productCell);
+
+            row.appendChild(createElement(
+                "td",
+                product.brand?.name || "—"
+            ));
+
+            row.appendChild(createElement(
+                "td",
+                product.category?.name || "—"
+            ));
+
+            row.appendChild(createElement(
+                "td",
+                formatPrice(product.price)
+            ));
+
+            row.appendChild(createElement(
+                "td",
+                String(product.stock)
+            ));
+
+            row.appendChild(createElement(
+                "td",
+                product.isActive ? "Active" : "Inactive"
+            ));
+
+            row.appendChild(createElement(
+                "td",
+                "Management coming next."
+            ));
+
+            productsTableBody.appendChild(row);
+        });
+    }
+
+    async function loadProducts() {
+        hideProductMessage();
+
+        refreshProductsButton.disabled = true;
+        productsTableBody.replaceChildren();
+
+        const loadingRow = document.createElement("tr");
+        const loadingCell = createElement(
+            "td",
+            "Loading products...",
+            "admin-table-message"
+        );
+
+        loadingCell.colSpan = 8;
+        loadingRow.appendChild(loadingCell);
+        productsTableBody.appendChild(loadingRow);
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/admin/products`,
+                {
+                    credentials: "include"
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Unable to load products."
+                );
+            }
+
+            allProducts = result.data.products || [];
+
+            renderProducts();
+
+        } catch (error) {
+            console.error("Product loading error:", error);
+
+            productsTableBody.replaceChildren();
+            showProductMessage(error.message);
+
+        } finally {
+            refreshProductsButton.disabled = false;
+        }
+    }
+
+    // Product search
+    productSearchInput.addEventListener("input", renderProducts);
+
+    // Product status filter
+    productStatusFilter.addEventListener("change", renderProducts);
+
+    // Refresh products
+    refreshProductsButton.addEventListener("click", loadProducts);
+
+
     refreshButton.addEventListener("click", () => {
         loadOrders();
         loadDashboardStats();
@@ -582,7 +791,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         await Promise.all([
             loadOrders(),
-            loadDashboardStats()
+            loadDashboardStats(),
+            loadProducts()
         ]);
     }
 
