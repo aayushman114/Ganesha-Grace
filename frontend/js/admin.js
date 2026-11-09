@@ -34,9 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const addProductForm = document.getElementById("add-product-form");
     const saveProductButton = document.getElementById("save-product-button");
     const productFormFeedback = document.getElementById("product-form-feedback");
-
     const productCategorySelect = document.getElementById("product-category");
     const productBrandSelect = document.getElementById("product-brand");
+    const productModalTitle = document.getElementById("product-modal-title");
+
+    let editingProductId = null;
 
     let allProducts = [];
     let allCategories = [];
@@ -605,12 +607,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Open modal
-    function openProductModal() {
-        addProductForm.reset();
-        productFormFeedback.textContent = "";
-        productFormFeedback.className = "product-form-feedback";
+    function openProductModal(product = null) {
+    addProductForm.reset();
 
-        populateProductDropdowns();
+    editingProductId = product ? product.id : null;
+
+    productFormFeedback.textContent = "";
+    productFormFeedback.className = "product-form-feedback";
+
+    populateProductDropdowns();
+
+    if (product) {
+        productModalTitle.textContent = "Edit Product";
+        saveProductButton.textContent = "Update Product";
+
+        addProductForm.elements.namedItem("name").value =
+            product.name || "";
+
+        addProductForm.elements.namedItem("description").value =
+            product.description || "";
+
+        addProductForm.elements.namedItem("price").value =
+            product.price || "";
+
+        addProductForm.elements.namedItem("rating").value =
+            product.rating ?? "";
+
+        addProductForm.elements.namedItem("imageUrl").value =
+            product.imageUrl || "";
+
+        addProductForm.elements.namedItem("stock").value =
+            product.stock ?? 0;
+
+        addProductForm.elements.namedItem("categoryId").value =
+            String(product.categoryId);
+
+        addProductForm.elements.namedItem("brandId").value =
+            String(product.brandId);
+        } else {
+            productModalTitle.textContent = "Add New Product";
+            saveProductButton.textContent = "Save Product";
+        }
 
         productModal.hidden = false;
         document.getElementById("product-name").focus();
@@ -645,45 +682,49 @@ document.addEventListener("DOMContentLoaded", () => {
         brandId: Number(formData.get("brandId"))
     };
 
+    const isEditing = editingProductId !== null;
+
     saveProductButton.disabled = true;
-    saveProductButton.textContent = "Saving...";
+    saveProductButton.textContent = isEditing
+        ? "Updating..."
+        : "Saving...";
 
     try {
-        const response = await fetch(
-            `${API_BASE_URL}/admin/products`,
-            {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(productData)
-            }
-        );
+        const endpoint = isEditing
+            ? `${API_BASE_URL}/admin/products/${editingProductId}`
+            : `${API_BASE_URL}/admin/products`;
+
+        const response = await fetch(endpoint, {
+            method: isEditing ? "PUT" : "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(productData)
+        });
 
         const result = await response.json();
 
         if (!response.ok || !result.success) {
             throw new Error(
-                result.message || "Unable to create product."
+                result.message || "Unable to save product."
             );
         }
-
-        productFormFeedback.textContent =
-            "Product created successfully.";
-
-        productFormFeedback.classList.add("success");
-
-        addProductForm.reset();
 
         await loadProducts();
 
         closeProductModal();
 
-        showProductMessage("Product created successfully.");
+        showProductMessage(
+            isEditing
+                ? "Product updated successfully."
+                : "Product created successfully."
+        );
+
+        editingProductId = null;
 
     } catch (error) {
-        console.error("Product creation error:", error);
+        console.error("Product save error:", error);
 
         productFormFeedback.textContent = error.message;
         productFormFeedback.classList.add("error");
@@ -822,10 +863,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 product.isActive ? "Active" : "Inactive"
             ));
 
-            row.appendChild(createElement(
-                "td",
-                "Management coming next."
-            ));
+            const actionCell = document.createElement("td");
+
+            const editButton = createElement(
+                "button",
+                "Edit",
+                "admin-view-button"
+            );
+
+            editButton.type = "button";
+
+            editButton.addEventListener("click", () => {
+                openProductModal(product);
+            });
+
+            actionCell.appendChild(editButton);
+            row.appendChild(actionCell);
 
             productsTableBody.appendChild(row);
         });

@@ -435,6 +435,244 @@ app.post("/api/admin/products", async (req, res) => {
     }
 });
 
+
+// ============================================
+// ADMIN - UPDATE AN EXISTING PRODUCT
+// ============================================
+
+app.put("/api/admin/products/:id", async (req, res) => {
+    try {
+        // 1. Authenticate admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to manage products."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 2. Validate product ID.
+        const productId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(productId) || productId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID."
+            });
+        }
+
+        // 3. Check whether the product exists.
+        const existingProduct = await prisma.product.findUnique({
+            where: { id: productId }
+        });
+
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found."
+            });
+        }
+
+        // 4. Read submitted product data.
+        const {
+            name,
+            description,
+            price,
+            rating,
+            imageUrl,
+            stock,
+            categoryId,
+            brandId
+        } = req.body || {};
+
+        // 5. Validate name.
+        if (
+            typeof name !== "string" ||
+            !name.trim() ||
+            name.trim().length > 200
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Product name is required and must not exceed 200 characters."
+            });
+        }
+
+        // 6. Validate description.
+        if (
+            description !== undefined &&
+            description !== null &&
+            typeof description !== "string"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Product description must be text."
+            });
+        }
+
+        // 7. Validate price.
+        const priceText = String(price ?? "");
+
+        if (
+            !/^\d{1,8}(\.\d{1,2})?$/.test(priceText) ||
+            Number(priceText) <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter a valid price greater than zero."
+            });
+        }
+
+        // 8. Validate rating.
+        let cleanRating = null;
+
+        if (rating !== undefined && rating !== null && rating !== "") {
+            const ratingText = String(rating);
+
+            if (
+                !/^\d(\.\d)?$/.test(ratingText) ||
+                Number(ratingText) < 0 ||
+                Number(ratingText) > 5
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Rating must be between 0 and 5."
+                });
+            }
+
+            cleanRating = ratingText;
+        }
+
+        // 9. Validate image URL.
+        let cleanImageUrl = null;
+
+        if (imageUrl !== undefined && imageUrl !== null && imageUrl !== "") {
+            if (
+                typeof imageUrl !== "string" ||
+                imageUrl.trim().length > 500
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Image URL must not exceed 500 characters."
+                });
+            }
+
+            try {
+                const parsedUrl = new URL(imageUrl.trim());
+
+                if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+                    throw new Error("Invalid protocol");
+                }
+
+                cleanImageUrl = parsedUrl.toString();
+            } catch {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a valid HTTP or HTTPS image URL."
+                });
+            }
+        }
+
+        // 10. Validate stock.
+        if (!Number.isSafeInteger(stock) || stock < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Stock must be a non-negative whole number."
+            });
+        }
+
+        // 11. Validate category and brand IDs.
+        if (
+            !Number.isSafeInteger(categoryId) ||
+            categoryId < 1 ||
+            !Number.isSafeInteger(brandId) ||
+            brandId < 1
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Select a valid category and brand."
+            });
+        }
+
+        // 12. Verify category and brand exist.
+        const [category, brand] = await Promise.all([
+            prisma.category.findUnique({
+                where: { id: categoryId }
+            }),
+            prisma.brand.findUnique({
+                where: { id: brandId }
+            })
+        ]);
+
+        if (!category || !brand) {
+            return res.status(400).json({
+                success: false,
+                message: "Selected category or brand does not exist."
+            });
+        }
+
+        // 13. Update the existing product.
+        const updatedProduct = await prisma.product.update({
+            where: { id: productId },
+            data: {
+                name: name.trim(),
+                description: description?.trim() || null,
+                price: priceText,
+                rating: cleanRating,
+                imageUrl: cleanImageUrl,
+                stock,
+                categoryId,
+                brandId
+            },
+            include: {
+                category: true,
+                brand: true
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Product updated successfully.",
+            data: updatedProduct
+        });
+
+    } catch (error) {
+        console.error("Admin product update failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update product."
+        });
+    }
+});
+
 // ============================================
 // START SERVER
 // ============================================
