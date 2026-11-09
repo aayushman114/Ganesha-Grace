@@ -800,6 +800,61 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function saveProductStock(product, input, button) {
+    const newStock = Number(input.value);
+
+    if (!Number.isSafeInteger(newStock) || newStock < 0) {
+        showProductMessage(
+            "Stock must be a non-negative whole number."
+        );
+        return;
+    }
+
+    button.disabled = true;
+    input.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/admin/products/${product.id}/stock`,
+            {
+                method: "PATCH",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    stock: newStock
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.message || "Unable to update stock."
+            );
+        }
+
+        product.stock = result.data.product.stock;
+
+        updateInventorySummary();
+        renderProducts();
+
+        showProductMessage(
+            `${product.name} stock updated to ${product.stock}.`
+        );
+
+    } catch (error) {
+        console.error("Stock update error:", error);
+        showProductMessage(error.message);
+
+    } finally {
+        button.disabled = false;
+    }
+}
+
     function updateInventorySummary() {
     const total = allProducts.length;
 
@@ -937,10 +992,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const stockCell = document.createElement("td");
             const stock = Number(product.stock);
 
-            stockCell.appendChild(
-                createElement("strong", String(stock))
-            );
-
             let stockStatus;
             let stockClass;
 
@@ -958,6 +1009,32 @@ document.addEventListener("DOMContentLoaded", () => {
             stockCell.appendChild(
                 createElement("small", stockStatus, stockClass)
             );
+
+            // Stock editor
+            const stockEditor = createElement("div", "", "stock-editor");
+
+            const stockInput = document.createElement("input");
+            stockInput.type = "number";
+            stockInput.min = "0";
+            stockInput.step = "1";
+            stockInput.value = String(stock);
+            stockInput.className = "stock-input";
+            stockInput.setAttribute("aria-label", `Stock quantity for ${product.name}`);
+
+            const saveStockButton = createElement(
+                "button",
+                "Save",
+                "admin-view-button"
+            );
+
+            saveStockButton.type = "button";
+
+            saveStockButton.addEventListener("click", () => {
+                saveProductStock(product, stockInput, saveStockButton);
+            });
+
+            stockEditor.append(stockInput, saveStockButton);
+            stockCell.appendChild(stockEditor);
 
             row.appendChild(stockCell);
 

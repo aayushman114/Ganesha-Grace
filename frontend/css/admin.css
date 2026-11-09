@@ -896,3 +896,31 @@
 .stock-available {
     color: #16a34a;
 }
+
+/* Direct product stock editor */
+.stock-editor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.stock-input {
+    width: 75px;
+    min-width: 0;
+    padding: 7px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.stock-input:focus {
+    outline: 2px solid #2563eb;
+    border-color: #2563eb;
+}
+
+.stock-editor button {
+    padding: 7px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}

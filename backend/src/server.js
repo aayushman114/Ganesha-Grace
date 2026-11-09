@@ -779,6 +779,107 @@ app.patch("/api/admin/products/:id/status", async (req, res) => {
     }
 });
 
+// ============================================
+// ADMIN - UPDATE PRODUCT STOCK
+// ============================================
+app.patch("/api/admin/products/:id/stock", async (req, res) => {
+    try {
+        // Verify admin session
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid or expired session."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Admin access required."
+            });
+        }
+
+        // Validate product ID
+        const productId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(productId) || productId <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID."
+            });
+        }
+
+        // Validate stock quantity
+        const { stock } = req.body;
+
+        if (!Number.isSafeInteger(stock) || stock < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Stock must be a non-negative whole number."
+            });
+        }
+
+        // Check whether product exists
+        const existingProduct = await prisma.product.findUnique({
+            where: { id: productId }
+        });
+
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found."
+            });
+        }
+
+        // Update only stock
+        const updatedProduct = await prisma.product.update({
+            where: { id: productId },
+            data: { stock },
+            select: {
+                id: true,
+                name: true,
+                stock: true
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Product stock updated successfully.",
+            data: { product: updatedProduct }
+        });
+
+    } catch (error) {
+        console.error("Update product stock error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update product stock."
+        });
+    }
+});
+
 
 // ============================================
 // START SERVER
