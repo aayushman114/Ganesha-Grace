@@ -25,6 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const productSearchInput = document.getElementById("product-search");
     const productStatusFilter = document.getElementById("product-status-filter");
     const refreshProductsButton = document.getElementById("refresh-products");
+    // Inventory summary elements
+    const inventoryTotal = document.getElementById("inventory-total");
+    const inventoryAvailable = document.getElementById("inventory-available");
+    const inventoryLow = document.getElementById("inventory-low");
+    const inventoryOut = document.getElementById("inventory-out");
     // Add Product modal elements
     const productModal = document.getElementById("product-modal");
     const addProductButton = document.getElementById("add-product-button");
@@ -795,6 +800,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function updateInventorySummary() {
+    const total = allProducts.length;
+
+    const available = allProducts.filter(
+        product => Number(product.stock) > 5
+    ).length;
+
+    const low = allProducts.filter(
+        product => {
+            const stock = Number(product.stock);
+            return stock > 0 && stock <= 5;
+        }
+    ).length;
+
+    const out = allProducts.filter(
+        product => Number(product.stock) === 0
+    ).length;
+
+    inventoryTotal.textContent = total;
+    inventoryAvailable.textContent = available;
+    inventoryLow.textContent = low;
+    inventoryOut.textContent = out;
+}
+
 
     function renderProducts() {
         productsTableBody.replaceChildren();
@@ -1005,9 +1034,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             allProducts = result.data.products || [];
+            allProducts = result.data.products || [];
             allCategories = result.data.categories || [];
             allBrands = result.data.brands || [];
 
+            updateInventorySummary();
             renderProducts();
 
         } catch (error) {
