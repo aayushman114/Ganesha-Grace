@@ -881,9 +881,7 @@ document.addEventListener("DOMContentLoaded", () => {
     inventoryAvailable.textContent = available;
     inventoryLow.textContent = low;
     inventoryOut.textContent = out;
-}
-
-    // Update inventory alerts
+     // Update inventory alerts
     const alertMessages = [];
 
     if (out > 0) {
@@ -902,6 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
         inventoryAlerts.hidden = true;
         inventoryAlertMessage.textContent = "";
     }
+}
 
     function renderProducts() {
         productsTableBody.replaceChildren();
