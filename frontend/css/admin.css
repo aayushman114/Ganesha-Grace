@@ -924,3 +924,21 @@
     font-size: 12px;
     white-space: nowrap;
 }
+
+/* Inventory alerts */
+.inventory-alerts {
+    margin-top: 18px;
+    padding: 14px 18px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-left: 4px solid #ea580c;
+    border-radius: 6px;
+    color: #9a3412;
+}
+
+.inventory-alerts p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+

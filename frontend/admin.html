@@ -127,6 +127,10 @@
                     </article>
 
                 </div>
+                <!-- Inventory Alerts -->
+                <div id="inventory-alerts" class="inventory-alerts" aria-live="polite" hidden>
+                    <p id="inventory-alert-message"></p>
+                </div>
             </section>
 
             <!-- Orders Management -->
@@ -258,6 +262,16 @@
                         <option value="">All Products</option>
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="admin-status-filter">
+                    <label for="product-stock-filter">Inventory status</label>
+                    <select id="product-stock-filter">
+                        <option value="">All Stock Levels</option>
+                        <option value="available">In Stock</option>
+                        <option value="low">Low Stock</option>
+                        <option value="out">Out of Stock</option>
                     </select>
                 </div>
 

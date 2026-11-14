@@ -24,12 +24,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const productMessage = document.getElementById("product-message");
     const productSearchInput = document.getElementById("product-search");
     const productStatusFilter = document.getElementById("product-status-filter");
+    const productStockFilter = document.getElementById("product-stock-filter");
     const refreshProductsButton = document.getElementById("refresh-products");
     // Inventory summary elements
     const inventoryTotal = document.getElementById("inventory-total");
     const inventoryAvailable = document.getElementById("inventory-available");
     const inventoryLow = document.getElementById("inventory-low");
     const inventoryOut = document.getElementById("inventory-out");
+    // Inventory alert elements
+    const inventoryAlerts = document.getElementById("inventory-alerts");
+    const inventoryAlertMessage = document.getElementById("inventory-alert-message");
     // Add Product modal elements
     const productModal = document.getElementById("product-modal");
     const addProductButton = document.getElementById("add-product-button");
@@ -879,14 +883,36 @@ document.addEventListener("DOMContentLoaded", () => {
     inventoryOut.textContent = out;
 }
 
+    // Update inventory alerts
+    const alertMessages = [];
+
+    if (out > 0) {
+        alertMessages.push(`${out} product(s) out of stock`);
+    }
+
+    if (low > 0) {
+        alertMessages.push(`${low} product(s) with low stock`);
+    }
+
+    if (alertMessages.length > 0) {
+        inventoryAlerts.hidden = false;
+        inventoryAlertMessage.textContent =
+            `Inventory attention needed: ${alertMessages.join(" and ")}.`;
+    } else {
+        inventoryAlerts.hidden = true;
+        inventoryAlertMessage.textContent = "";
+    }
 
     function renderProducts() {
         productsTableBody.replaceChildren();
 
-        const search = productSearchInput.value.trim().toLowerCase();
+       const search = productSearchInput.value.trim().toLowerCase();
         const status = productStatusFilter.value;
+        const stockFilter = productStockFilter.value;
 
         const filteredProducts = allProducts.filter(product => {
+            const stock = Number(product.stock);
+
             const matchesSearch =
                 product.name.toLowerCase().includes(search) ||
                 (product.brand?.name || "").toLowerCase().includes(search) ||
@@ -896,7 +922,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 status === "" ||
                 String(product.isActive) === status;
 
-            return matchesSearch && matchesStatus;
+            const matchesStock =
+                stockFilter === "" ||
+                (stockFilter === "available" && stock > 5) ||
+                (stockFilter === "low" && stock > 0 && stock <= 5) ||
+                (stockFilter === "out" && stock === 0);
+
+            return matchesSearch && matchesStatus && matchesStock;
         });
 
         if (filteredProducts.length === 0) {
@@ -1134,6 +1166,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Product status filter
     productStatusFilter.addEventListener("change", renderProducts);
+
+    // Product inventory filter
+    productStockFilter.addEventListener("change", renderProducts);
 
     // Refresh products
     refreshProductsButton.addEventListener("click", loadProducts);
