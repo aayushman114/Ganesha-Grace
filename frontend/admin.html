@@ -27,6 +27,8 @@
                 <a href="#dashboard" class="active">Dashboard</a>
                 <a href="#orders">Orders</a>
                 <a href="#products">Products</a>
+                <a href="#customers">Customers</a>
+                <a href="#categories-brands">Categories &amp; Brands</a>
                 <a href="./index.html">View Store</a>
             </nav>
 
@@ -54,87 +56,113 @@
             </header>
 
             <!-- Dashboard -->
-            <section id="dashboard" class="admin-section">
+            <section id="dashboard" class="admin-section" hidden>
 
                 <div class="admin-section-heading">
                     <div>
                         <h2>Overview</h2>
-                        <p>Monitor your store's order activity.</p>
+                        <p>Monitor your store's performance.</p>
+                    </div>
+                    <div class="admin-period-selector">
+                        <label for="analytics-period">Period</label>
+                        <select id="analytics-period">
+                            <option value="day">Today</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="year">This Year</option>
+                        </select>
                     </div>
                 </div>
 
                 <!-- Summary Cards -->
-                <div class="admin-stats-grid">
-
-                    <article class="admin-stat-card">
-                        <p>Total Orders</p>
-                        <h3 id="total-orders">—</h3>
-                        <span>All orders</span>
-                    </article>
-
-                    <article class="admin-stat-card">
-                        <p>Pending Orders</p>
-                        <h3 id="pending-orders">—</h3>
-                        <span>Awaiting processing</span>
-                    </article>
-
-                    <article class="admin-stat-card">
-                        <p>Processing Orders</p>
-                        <h3 id="processing-orders">—</h3>
-                        <span>Currently processing</span>
-                    </article>
-
-                    <article class="admin-stat-card">
-                        <p>Delivered Orders</p>
-                        <h3 id="delivered-orders">—</h3>
-                        <span>Successfully delivered</span>
-                    </article>
-
+                <div class="admin-stats-grid" id="analytics-summary-cards">
+                    <!-- Filled by JS -->
                 </div>
 
-                <!-- Inventory Summary -->
-                <div class="admin-section-heading" style="margin-top: 30px;">
-                    <div>
-                        <h2>Inventory Overview</h2>
-                        <p>Monitor product availability and stock levels.</p>
+                <!-- Revenue Chart -->
+                <div class="admin-chart-section">
+                    <h3>Revenue Trend</h3>
+                    <div class="admin-chart-container">
+                        <canvas id="revenue-chart"></canvas>
                     </div>
                 </div>
 
-                <div class="admin-stats-grid">
+                <!-- Top Products & Conversion -->
+                <div class="admin-analytics-grid">
+                    
+                    <!-- Top Products by Revenue -->
+                    <div class="admin-analytics-card">
+                        <h3>Top Products by Revenue</h3>
+                        <div class="admin-table-container">
+                            <table class="admin-orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity Sold</th>
+                                        <th>Revenue</th>
+                                        <th>Orders</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-products-revenue-body">
+                                    <tr><td colspan="4" class="admin-table-message">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                    <article class="admin-stat-card">
-                        <p>Total Products</p>
-                        <h3 id="inventory-total">—</h3>
-                        <span>All products</span>
-                    </article>
+                    <!-- Top Products by Quantity -->
+                    <div class="admin-analytics-card">
+                        <h3>Top Products by Quantity</h3>
+                        <div class="admin-table-container">
+                            <table class="admin-orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity Sold</th>
+                                        <th>Revenue</th>
+                                        <th>Orders</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-products-quantity-body">
+                                    <tr><td colspan="4" class="admin-table-message">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                    <article class="admin-stat-card">
-                        <p>In Stock</p>
-                        <h3 id="inventory-available">—</h3>
-                        <span>More than 5 units</span>
-                    </article>
-
-                    <article class="admin-stat-card">
-                        <p>Low Stock</p>
-                        <h3 id="inventory-low">—</h3>
-                        <span>5 units or fewer</span>
-                    </article>
-
-                    <article class="admin-stat-card">
-                        <p>Out of Stock</p>
-                        <h3 id="inventory-out">—</h3>
-                        <span>Zero units available</span>
-                    </article>
+                    <!-- Conversion Funnel -->
+                    <div class="admin-analytics-card">
+                        <h3>Conversion Funnel</h3>
+                        <div class="conversion-funnel">
+                            <div class="funnel-step">
+                                <span class="funnel-label">Sessions</span>
+                                <span class="funnel-value" id="funnel-sessions">—</span>
+                                <span class="funnel-rate">100%</span>
+                            </div>
+                            <div class="funnel-step">
+                                <span class="funnel-label">Orders Placed</span>
+                                <span class="funnel-value" id="funnel-orders">—</span>
+                                <span class="funnel-rate" id="funnel-session-to-order">—%</span>
+                            </div>
+                            <div class="funnel-step">
+                                <span class="funnel-label">Paid</span>
+                                <span class="funnel-value" id="funnel-paid">—</span>
+                                <span class="funnel-rate" id="funnel-order-to-payment">—%</span>
+                            </div>
+                            <div class="funnel-step">
+                                <span class="funnel-label">Delivered</span>
+                                <span class="funnel-value" id="funnel-delivered">—</span>
+                                <span class="funnel-rate" id="funnel-order-to-complete">—%</span>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
-                <!-- Inventory Alerts -->
-                <div id="inventory-alerts" class="inventory-alerts" aria-live="polite" hidden>
-                    <p id="inventory-alert-message"></p>
-                </div>
+
             </section>
 
             <!-- Orders Management -->
-            <section id="orders" class="admin-section">
+            <section id="orders" class="admin-section" hidden>
 
                 <div class="admin-section-heading">
                     <div>
@@ -230,7 +258,7 @@
 
             
         <!-- Products Management -->
-        <section id="products" class="admin-section">
+        <section id="products" class="admin-section" hidden>
 
             <div class="admin-section-heading">
                 <div>
@@ -317,9 +345,163 @@
 
         </section>
 
+        <!-- Customers Management -->
+        <section id="customers" class="admin-section" hidden>
+
+            <div class="admin-section-heading">
+                <div>
+                    <h2>Customer Management</h2>
+                    <p>View and manage registered customer accounts.</p>
+                </div>
+            </div>
+
+            <!-- Customer Search and Filters -->
+            <div class="admin-filters">
+
+                <div class="admin-search">
+                    <label for="customer-search">Search customers</label>
+                    <input
+                        type="search"
+                        id="customer-search"
+                        placeholder="Search by name or email"
+                    >
+                </div>
+
+                <div class="admin-status-filter">
+                    <label for="customer-status-filter">Account status</label>
+                    <select id="customer-status-filter">
+                        <option value="">All Statuses</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <button type="button" id="refresh-customers"
+                        class="admin-filter-button">
+                    Refresh Customers
+                </button>
+
+            </div>
+
+            <!-- Customer Feedback -->
+            <div id="customer-message" class="admin-message"
+                hidden role="status" aria-live="polite">
+            </div>
+
+            <!-- Customers Table -->
+            <div class="admin-table-container">
+
+                <table class="admin-orders-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Registered</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="customers-table-body">
+                        <tr>
+                            <td colspan="6" class="admin-table-message">
+                                Customers will appear here.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- Categories & Brands Management -->
+        <section id="categories-brands" class="admin-section" hidden>
+
+            <div class="admin-section-heading">
+                <div>
+                    <h2>Categories &amp; Brands</h2>
+                    <p>Manage product categories and brands.</p>
+                </div>
+            </div>
+
+            <!-- Tabs for Categories / Brands -->
+            <div class="admin-tabs">
+                <button type="button" class="admin-tab active" data-tab="categories">Categories</button>
+                <button type="button" class="admin-tab" data-tab="brands">Brands</button>
+            </div>
+
+            <!-- Categories Panel -->
+            <div id="categories-panel" class="admin-tab-panel">
+
+                <!-- Category Search & Actions -->
+                <div class="admin-filters">
+                    <div class="admin-search">
+                        <label for="category-search">Search categories</label>
+                        <input type="search" id="category-search" placeholder="Search by name or slug">
+                    </div>
+                    <button type="button" id="add-category-button" class="admin-refresh-button">+ Add Category</button>
+                </div>
+
+                <div id="category-message" class="admin-message" hidden role="status" aria-live="polite"></div>
+
+                <div class="admin-table-container">
+                    <table class="admin-orders-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th>Products</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categories-table-body">
+                            <tr><td colspan="6" class="admin-table-message">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Brands Panel -->
+            <div id="brands-panel" class="admin-tab-panel" hidden>
+
+                <div class="admin-filters">
+                    <div class="admin-search">
+                        <label for="brand-search">Search brands</label>
+                        <input type="search" id="brand-search" placeholder="Search by name">
+                    </div>
+                    <button type="button" id="add-brand-button" class="admin-refresh-button">+ Add Brand</button>
+                </div>
+
+                <div id="brand-message" class="admin-message" hidden role="status" aria-live="polite"></div>
+
+                <div class="admin-table-container">
+                    <table class="admin-orders-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Products</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brands-table-body">
+                            <tr><td colspan="5" class="admin-table-message">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
 
         </main>
-        
+                
         <!-- Order Details Modal -->
         <div id="order-details-modal" class="order-modal" hidden>
             <div class="order-modal-overlay" id="close-order-overlay"></div>
@@ -348,6 +530,88 @@
 
     </div>
 
+    <!-- Customer Orders Modal -->
+    <div id="customer-orders-modal" class="order-modal" hidden>
+        <div class="order-modal-overlay" id="close-customer-orders-overlay"></div>
+
+        <section class="order-modal-content"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="customer-orders-modal-title">
+
+            <div class="order-modal-header">
+                <div>
+                    <p class="admin-eyebrow">CUSTOMER ORDER HISTORY</p>
+                    <h2 id="customer-orders-modal-title">Orders for <span id="customer-orders-customer-name"></span></h2>
+                </div>
+
+                <button type="button" id="close-customer-orders-modal"
+                        class="order-modal-close" aria-label="Close">
+                    &times;
+                </button>
+            </div>
+
+            <div id="customer-orders-content"></div>
+
+        </section>
+    </div>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="category-modal" class="order-modal" hidden>
+        <div class="order-modal-overlay" id="close-category-overlay"></div>
+        <section class="order-modal-content" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+            <div class="order-modal-header">
+                <div>
+                    <p class="admin-eyebrow">CATEGORY MANAGEMENT</p>
+                    <h2 id="category-modal-title">Add Category</h2>
+                </div>
+                <button type="button" id="close-category-modal" class="order-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <form id="category-form" class="product-form">
+                <input type="hidden" name="id" id="category-id">
+                <div class="product-form-group">
+                    <label for="category-name">Category Name *</label>
+                    <input type="text" id="category-name" name="name" maxlength="100" required>
+                </div>
+                <div class="product-form-group">
+                    <label for="category-slug">Slug *</label>
+                    <input type="text" id="category-slug" name="slug" maxlength="120" required>
+                    <small>URL-friendly identifier (auto-generated from name)</small>
+                </div>
+                <div id="category-form-feedback" class="product-form-feedback" role="status" aria-live="polite"></div>
+                <div class="product-form-actions">
+                    <button type="button" id="cancel-category-button" class="admin-filter-button">Cancel</button>
+                    <button type="submit" id="save-category-button" class="admin-refresh-button">Save Category</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <!-- Add/Edit Brand Modal -->
+    <div id="brand-modal" class="order-modal" hidden>
+        <div class="order-modal-overlay" id="close-brand-overlay"></div>
+        <section class="order-modal-content" role="dialog" aria-modal="true" aria-labelledby="brand-modal-title">
+            <div class="order-modal-header">
+                <div>
+                    <p class="admin-eyebrow">BRAND MANAGEMENT</p>
+                    <h2 id="brand-modal-title">Add Brand</h2>
+                </div>
+                <button type="button" id="close-brand-modal" class="order-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <form id="brand-form" class="product-form">
+                <input type="hidden" name="id" id="brand-id">
+                <div class="product-form-group">
+                    <label for="brand-name">Brand Name *</label>
+                    <input type="text" id="brand-name" name="name" maxlength="100" required>
+                </div>
+                <div id="brand-form-feedback" class="product-form-feedback" role="status" aria-live="polite"></div>
+                <div class="product-form-actions">
+                    <button type="button" id="cancel-brand-button" class="admin-filter-button">Cancel</button>
+                    <button type="submit" id="save-brand-button" class="admin-refresh-button">Save Brand</button>
+                </div>
+            </form>
+        </section>
+    </div>
     
     <!-- Add Product Modal -->
     <div id="product-modal" class="order-modal" hidden>
@@ -457,7 +721,7 @@
         </section>
     </div>
 
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="./js/admin.js"></script>
 </body>
 </html>

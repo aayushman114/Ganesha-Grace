@@ -19,72 +19,147 @@
 
 <body>
     <header class="site-header">
-        <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
-            Ganesha Grace
-        </a>
+        <div class="header-top">
+            <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+                Ganesha Grace
+            </a>
+
+            <div class="header-search" role="search">
+                <form id="header-search-form" action="./shop.html" method="get">
+                    <label for="header-search-input" class="visually-hidden">Search products</label>
+                    <input
+                        type="search"
+                        id="header-search-input"
+                        name="search"
+                        placeholder="Search products..."
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="search-submit" aria-label="Search">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="header-actions">
+                <div id="auth-status" class="auth-status">
+                    <a href="./login.html" id="account-link">Log In</a>
+                    <a href="./register.html" id="register-link">Create Account</a>
+                </div>
+
+                <button id="logout-button" class="logout-button" hidden>
+                    Log Out
+                </button>
+
+                <a class="cart-link" href="./cart.html" aria-label="Shopping cart">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span id="cart-count" class="cart-count-badge">0</span>
+                </a>
+            </div>
+        </div>
 
         <nav class="main-nav" aria-label="Main navigation">
             <a href="./index.html#home">Home</a>
-            <a href="./index.html#categories">Categories</a>
+            <a href="./shop.html">Categories</a>
             <a href="./index.html#featured">Featured Products</a>
             <a href="./my-orders.html">My Orders</a>
         </nav>
-
-        <div class="header-actions">
-            <div id="auth-status" class="auth-status">
-                <a href="./login.html" id="account-link">Log In</a>
-                <a href="./register.html" id="register-link">Create Account</a>
-            </div>
-
-            <button id="logout-button" class="logout-button" hidden>
-                Log Out
-            </button>
-
-            <a class="cart-link" href="./cart.html">
-                Cart <span id="cart-count">0</span>
-            </a>
-        </div>
     </header>
 
-    <main>
-        <section class="hero" id="home">
-            <p class="eyebrow">YOUR BEAUTY, YOUR RITUAL</p>
+        <main>
+        <!-- Promotional Hero Banner Slider -->
+        <section class="hero-banner" id="hero-banner" aria-label="Promotional banners">
+            <div class="hero-banner-track" id="hero-banner-track">
+                <!-- JavaScript will render banner slides -->
+            </div>
+            <div class="hero-banner-nav" id="hero-banner-nav" aria-label="Banner navigation">
+                <!-- Dots will be inserted here -->
+            </div>
+            <button class="hero-banner-prev" id="hero-banner-prev" aria-label="Previous banner">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="hero-banner-next" id="hero-banner-next" aria-label="Next banner">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </section>
 
-            <h1>Discover Your Everyday Glow</h1>
+        <!-- Horizontal Category Shortcuts -->
+        <section class="category-shortcuts" id="category-shortcuts" aria-label="Category shortcuts">
+            <div class="category-shortcuts-track" id="category-shortcuts-track">
+                <!-- JavaScript will render category cards here -->
+            </div>
+        </section>
 
-            <p>
-                Explore skincare and beauty essentials
-                selected for your daily routine.
-            </p>
+        <!-- Featured Categories -->
+        <section class="featured-categories" id="featured-categories">
+            <div class="section-heading">
+                <h2>Featured Categories</h2>
+                <p>Explore our most loved collections</p>
+            </div>
+            <div class="featured-categories-grid" id="featured-categories-grid">
+                <!-- JavaScript will render featured categories -->
+            </div>
+        </section>
 
-            <a class="primary-button" href="#categories">
-                Explore Collection
-            </a>
+        <!-- Promotional Banner -->
+        <section class="promo-banner" id="promo-banner">
+            <div class="promo-banner-card" id="promo-banner-card">
+                <!-- JavaScript will render promo banner -->
+            </div>
         </section>
 
         <section class="categories" id="categories">
-            <h2>Explore Our Categories</h2>
+            <div class="section-heading">
+                <h2>Explore Our Categories</h2>
+                <p>Shop by category and find your perfect match.</p>
+            </div>
 
-            <div class="category-grid">
-                <article class="category-card">
-                    <h3>Face Wash</h3>
-                    <p>Find a cleanser for your daily routine.</p>
-                </article>
+            <div class="category-grid" id="category-grid">
+                <!-- JavaScript will render categories here -->
+            </div>
+        </section>
 
-                <article class="category-card">
-                    <h3>Moisturizers</h3>
-                    <p>Explore everyday moisturizing products.</p>
-                </article>
+        <!-- Featured Brands -->
+        <section class="featured-brands" id="featured-brands">
+            <div class="section-heading">
+                <h2>Featured Brands</h2>
+                <p>Trusted names in skincare and beauty</p>
+            </div>
+            <div class="brand-grid" id="brand-grid">
+                <!-- JavaScript will render brands here -->
+            </div>
+        </section>
 
-                <article class="category-card">
-                    <h3>Serums</h3>
-                    <p>Discover products for your skincare routine.</p>
-                </article>
+        <!-- Special Offers -->
+        <section class="special-offers" id="special-offers">
+            <div class="section-heading">
+                <h2>Special Offers</h2>
+                <p>Limited time deals on your favorites</p>
+            </div>
+            <div class="product-grid" id="special-offers-grid">
+                <!-- JavaScript will render special offer products -->
+            </div>
+        </section>
 
-                <article class="category-card">
-                    <h3>Sunscreens</h3>
-                    <p>Browse sun protection products.</p>
-                </article>
+        <!-- Recommended Products -->
+        <section class="recommended-products" id="recommended-products">
+            <div class="section-heading">
+                <p class="eyebrow">YOUR DAILY ESSENTIALS</p>
+                <h2>Recommended For You</h2>
+                <p>Based on your browsing history</p>
+            </div>
+            <div class="product-grid" id="recommended-grid">
+                <!-- JavaScript will render recommended products -->
             </div>
         </section>
 

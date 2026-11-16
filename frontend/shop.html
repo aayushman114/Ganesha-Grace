@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shop | Ganesha Grace</title>
+
+    <meta
+        name="description"
+        content="Browse all categories and brands at Ganesha Grace."
+    >
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/shop.css">
+
+    <script src="./js/auth-status.js"></script>
+    <script src="./js/shop.js" defer></script>
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-top">
+            <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+                Ganesha Grace
+            </a>
+
+            <div class="header-search" role="search">
+                <form id="header-search-form" action="./shop.html" method="get">
+                    <label for="header-search-input" class="visually-hidden">Search products</label>
+                    <input
+                        type="search"
+                        id="header-search-input"
+                        name="search"
+                        placeholder="Search products..."
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="search-submit" aria-label="Search">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="header-actions">
+                <div id="auth-status" class="auth-status">
+                    <a href="./login.html" id="account-link">Log In</a>
+                    <a href="./register.html" id="register-link">Create Account</a>
+                </div>
+
+                <button id="logout-button" class="logout-button" hidden>
+                    Log Out
+                </button>
+
+                <a class="cart-link" href="./cart.html" aria-label="Shopping cart">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span id="cart-count" class="cart-count-badge">0</span>
+                </a>
+            </div>
+        </div>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="./index.html#home">Home</a>
+            <a href="./shop.html" class="active">Categories</a>
+            <a href="./index.html#featured">Featured Products</a>
+            <a href="./my-orders.html">My Orders</a>
+        </nav>
+    </header>
+
+    <main class="shop-main">
+    <div class="shop-layout">
+        <!-- LEFT SIDEBAR -->
+        <aside class="shop-sidebar" id="shop-sidebar">
+            <div class="sidebar-section">
+                <h3>Categories</h3>
+                <button type="button" class="clear-filters-btn" id="clear-category-filter" hidden>Clear category</button>
+                <ul class="category-tree" id="category-tree">
+                    <!-- JavaScript will render category tree here -->
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Price Range</h3>
+                <div class="price-filter">
+                    <label>
+                        <span>Min</span>
+                        <input type="number" id="price-min" placeholder="0" min="0" step="1">
+                    </label>
+                    <label>
+                        <span>Max</span>
+                        <input type="number" id="price-max" placeholder="5000" min="0" step="1">
+                    </label>
+                    <button type="button" class="apply-price-btn" id="apply-price">Apply</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Rating</h3>
+                <div class="rating-filter" id="rating-filter">
+                    <label><input type="checkbox" value="4"> ★★★★☆ & up (4.0+)</label>
+                    <label><input type="checkbox" value="3"> ★★★☆☆ & up (3.0+)</label>
+                    <label><input type="checkbox" value="2"> ★★☆☆☆ & up (2.0+)</label>
+                    <label><input type="checkbox" value="1"> ★☆☆☆☆ & up (1.0+)</label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Availability</h3>
+                <div class="availability-filter">
+                    <label><input type="checkbox" id="in-stock-only" checked> In stock only</label>
+                </div>
+            </div>
+
+            <button type="button" class="clear-all-filters-btn" id="clear-all-filters">Clear all filters</button>
+        </aside>
+
+        <!-- MOBILE SIDEBAR TOGGLE -->
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Open filters">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            Filters
+        </button>
+
+        <!-- RIGHT CONTENT -->
+        <div class="shop-content">
+            <!-- Categories Section (shown when no filter) -->
+            <section class="shop-section categories-section" id="categories">
+                <div class="section-heading">
+                    <h2>Shop by Category</h2>
+                    <p>Explore our curated skincare categories.</p>
+                </div>
+
+                <div class="category-grid" id="category-grid">
+                    <!-- JavaScript will render categories here -->
+                </div>
+            </section>
+
+            <!-- Brands Section -->
+            <section class="shop-section brands-section" id="brands">
+                <div class="section-heading">
+                    <h2>Shop by Brand</h2>
+                    <p>Discover our trusted skincare brands.</p>
+                </div>
+
+                <div class="brand-grid" id="brand-grid">
+                    <!-- JavaScript will render brands here -->
+                </div>
+            </section>
+
+            <!-- Products Section (filtered by category/brand) -->
+            <section class="shop-section products-section" id="products" hidden>
+                <div class="section-heading">
+                    <button type="button" id="back-to-categories" class="back-button" hidden aria-label="Back to categories">
+                        ← Back
+                    </button>
+                    <div>
+                        <h2 id="products-section-title">Products</h2>
+                        <p id="products-section-subtitle"></p>
+                    </div>
+                </div>
+
+
+            <div class="product-filters" id="product-filters">
+                <div class="filter-group">
+                    <label for="sort-select">Sort by</label>
+                    <select id="sort-select">
+                        <option value="featured">Featured</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="rating">Top Rated</option>
+                        <option value="newest">Newest</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="product-grid" id="product-grid">
+                <!-- JavaScript will render products here -->
+            </div>
+
+            <div class="pagination" id="pagination" hidden>
+                <button type="button" id="prev-page" disabled>Previous</button>
+                <span id="page-info">Page 1</span>
+                <button type="button" id="next-page" disabled>Next</button>
+            </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> Ganesha Grace.</p>
+        <p>Skincare and beauty for your everyday routine.</p>
+    </footer>
+</body>
+</html>

@@ -3,6 +3,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const { randomBytes, createHash } = require("crypto");
+const { Prisma } = require("./generated/prisma-client-js/client.js");
 require("dotenv").config();
 
 const prisma = require("./config/prisma");
@@ -45,23 +46,110 @@ app.get("/api/health", async (req, res) => {
     }
 });
 
-// ============================================
-// GET ALL PRODUCTS
+// GET ALL PRODUCTS (with optional category/brand filter + category tree + price/rating/stock)
 // ============================================
 
 app.get("/api/products", async (req, res) => {
     try {
+        const { category, brand, categoryTree, priceMin, priceMax, rating, inStock, onSale, featured, limit, search, sort } = req.query;
+
+        const where = { isActive: true };
+
+        if (brand) {
+            where.brandId = Number(brand);
+        }
+
+        if (category) {
+            if (categoryTree === "true") {
+                const cat = await prisma.category.findUnique({
+                    where: { slug: category },
+                    select: { id: true }
+                });
+                if (cat) {
+                    async function getDescendantIds(parentId) {
+                        const children = await prisma.category.findMany({
+                            where: { parentId },
+                            select: { id: true }
+                        });
+                        let ids = children.map(c => c.id);
+                        for (const child of children) {
+                            ids = ids.concat(await getDescendantIds(child.id));
+                        }
+                        return ids;
+                    }
+                    const descendantIds = await getDescendantIds(cat.id);
+                    const allIds = [cat.id, ...descendantIds];
+                    where.categoryId = { in: allIds };
+                }
+            } else {
+                where.category = { slug: category };
+            }
+        }
+
+        if (priceMin || priceMax) {
+            where.price = {};
+            if (priceMin) where.price.gte = Number(priceMin);
+            if (priceMax) where.price.lte = Number(priceMax);
+        }
+
+        if (rating) {
+            where.rating = { gte: Number(rating) };
+        }
+
+        if (inStock === "true") {
+            where.stock = { gt: 0 };
+        }
+
+        if (onSale === "true") {
+            where.onSale = true;
+        }
+
+        if (featured === "true") {
+            where.featured = true;
+        }
+
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
+                { brand: { name: { contains: search, mode: "insensitive" } } }
+            ];
+        }
+
+        // Determine sort order
+        let orderBy = { id: "asc" };
+        if (sort) {
+            switch (sort) {
+                case "price-asc":
+                    orderBy = { price: "asc" };
+                    break;
+                case "price-desc":
+                    orderBy = { price: "desc" };
+                    break;
+                case "rating":
+                    orderBy = { rating: "desc" };
+                    break;
+                case "newest":
+                    orderBy = { createdAt: "desc" };
+                    break;
+                case "featured":
+                    orderBy = [{ featured: "desc" }, { onSale: "desc" }, { id: "asc" }];
+                    break;
+                default:
+                    orderBy = { id: "asc" };
+            }
+        }
+
+        const take = limit ? Math.min(Number(limit), 100) : undefined;
+
         const products = await prisma.product.findMany({
-            where: {
-                isActive: true
-            },
+            where,
             include: {
                 category: true,
                 brand: true
             },
-            orderBy: {
-                id: "asc"
-            }
+            orderBy,
+            take
         });
 
         res.json({
@@ -71,13 +159,10 @@ app.get("/api/products", async (req, res) => {
         });
     } catch (error) {
         console.error("Failed to fetch products:", error.message);
-
-        res.status(500).json({
-            success: false,
-            message: "Unable to retrieve products"
-        });
+        res.status(500).json({ success: false, message: "Unable to retrieve products" });
     }
 });
+
 
 // ============================================
 // GET PRODUCT BY ID
@@ -123,6 +208,176 @@ app.get("/api/products/:id", async (req, res) => {
             success: false,
             message: "Unable to retrieve product"
         });
+    }
+});
+
+// ============================================
+// PUBLIC - CATEGORIES (with hierarchy)
+// ============================================
+
+app.get("/api/categories", async (req, res) => {
+    try {
+        const { parentId } = req.query;
+
+        const where = parentId ? { parentId: Number(parentId) } : { parentId: null };
+
+        const categories = await prisma.category.findMany({
+            where,
+            orderBy: { name: "asc" },
+            include: {
+                _count: { select: { product: true } },
+                other_category: {
+                    include: { _count: { select: { product: true } } }
+                }
+            }
+        });
+
+        res.json({
+            success: true,
+            data: categories.map(c => ({
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                parentId: c.parentId,
+                productCount: c._count.product,
+                children: c.other_category?.map(ch => ({
+                    id: ch.id,
+                    name: ch.name,
+                    slug: ch.slug,
+                    productCount: ch._count.product
+                })) || []
+            }))
+        });
+    } catch (error) {
+        console.error("Failed to fetch categories:", error.message);
+        res.status(500).json({ success: false, message: "Unable to retrieve categories" });
+    }
+});
+
+
+// ============================================
+// PUBLIC - BRANDS
+// ============================================
+
+app.get("/api/brands", async (req, res) => {
+    try {
+        const brands = await prisma.brand.findMany({
+            orderBy: { name: "asc" },
+            include: {
+                _count: { select: { product: true } }
+            }
+        });
+
+        res.json({
+            success: true,
+            data: brands.map(b => ({
+                id: b.id,
+                name: b.name,
+                productCount: b._count.product
+            }))
+        });
+    } catch (error) {
+        console.error("Failed to fetch brands:", error.message);
+        res.status(500).json({ success: false, message: "Unable to retrieve brands" });
+    }
+});
+
+// ============================================
+// PUBLIC - CATEGORY DESCENDANTS (for filtering)
+// ============================================
+
+app.get("/api/categories/:slug/descendants", async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        const category = await prisma.category.findUnique({
+            where: { slug }
+        });
+
+        if (!category) {
+            return res.status(404).json({ success: false, message: "Category not found" });
+        }
+
+        // Recursive function to get all descendant IDs
+        async function getDescendantIds(parentId) {
+            const children = await prisma.category.findMany({
+                where: { parentId },
+                select: { id: true }
+            });
+            let ids = children.map(c => c.id);
+            for (const child of children) {
+                ids = ids.concat(await getDescendantIds(child.id));
+            }
+            return ids;
+        }
+
+        const descendantIds = await getDescendantIds(category.id);
+        const allIds = [category.id, ...descendantIds];
+
+        res.json({ success: true, data: allIds });
+    } catch (error) {
+        console.error("Failed to fetch category descendants:", error.message);
+        res.status(500).json({ success: false, message: "Unable to retrieve category tree" });
+    }
+});
+
+
+
+// ============================================
+// PUBLIC - HERO BANNERS (Homepage Slider)
+// ============================================
+
+app.get("/api/hero-banners", async (req, res) => {
+    try {
+        const banners = [
+            {
+                id: 1,
+                title: "New Arrivals",
+                subtitle: "Discover the latest in skincare",
+                image: "./images/hero-banner-1.jpg",
+                link: "./shop.html?new=true"
+            },
+            {
+                id: 2,
+                title: "Summer Essentials",
+                subtitle: "Protect & glow all season",
+                image: "./images/hero-banner-2.jpg",
+                link: "./shop.html?category=sun-protection"
+            },
+            {
+                id: 3,
+                title: "Best Sellers",
+                subtitle: "Customer favorites at great prices",
+                image: "./images/hero-banner-3.jpg",
+                link: "./shop.html?sort=featured"
+            }
+        ];
+
+        res.json({ success: true, data: banners });
+    } catch (error) {
+        console.error("Failed to fetch hero banners:", error.message);
+        res.status(500).json({ success: false, message: "Unable to retrieve hero banners" });
+    }
+});
+
+
+// ============================================
+// PUBLIC - PROMO BANNER
+// ============================================
+
+app.get("/api/promo-banner", async (req, res) => {
+    try {
+        const promo = {
+            title: "Summer Sale",
+            subtitle: "Up to 50% off selected items",
+            image: "./images/promo-banner.jpg",
+            link: "./shop.html?sale=true"
+        };
+
+        res.json({ success: true, data: promo });
+    } catch (error) {
+        console.error("Failed to fetch promo banner:", error.message);
+        res.status(500).json({ success: false, message: "Unable to retrieve promo banner" });
     }
 });
 
@@ -880,6 +1135,1091 @@ app.patch("/api/admin/products/:id/stock", async (req, res) => {
     }
 });
 
+// ============================================
+// ADMIN - GET ALL CUSTOMERS
+// ============================================
+
+app.get("/api/admin/customers", async (req, res) => {
+    try {
+        // 1. Authenticate admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to access customer management."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 2. Fetch only CUSTOMER accounts with safe fields.
+        const customers = await prisma.user.findMany({
+            where: {
+                role: "CUSTOMER"
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isActive: true,
+                createdAt: true
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: customers
+        });
+
+    } catch (error) {
+        console.error("Admin customer retrieval failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve customers."
+        });
+    }
+});
+
+// ============================================
+// ADMIN - ACTIVATE OR DEACTIVATE A CUSTOMER
+// ============================================
+
+app.patch("/api/admin/customers/:id/status", async (req, res) => {
+    try {
+        // 1. Authenticate admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to manage customers."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 2. Validate customer ID.
+        const customerId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(customerId) || customerId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid customer ID."
+            });
+        }
+
+        // 3. Validate requested status.
+        const { isActive } = req.body || {};
+
+        if (typeof isActive !== "boolean") {
+            return res.status(400).json({
+                success: false,
+                message: "Customer status must be true or false."
+            });
+        }
+
+        // 4. Check whether the customer exists and is a CUSTOMER (not ADMIN).
+        const existingCustomer = await prisma.user.findUnique({
+            where: { id: customerId }
+        });
+
+        if (!existingCustomer) {
+            return res.status(404).json({
+                success: false,
+                message: "Customer not found."
+            });
+        }
+
+        if (existingCustomer.role !== "CUSTOMER") {
+            return res.status(403).json({
+                success: false,
+                message: "Cannot modify administrator accounts."
+            });
+        }
+
+        // 5. Prevent admin from deactivating themselves (extra safety).
+        if (customerId === session.user.id) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot change your own account status."
+            });
+        }
+
+        // 6. Update customer status.
+        const updatedCustomer = await prisma.user.update({
+            where: { id: customerId },
+            data: { isActive },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isActive: true
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: isActive
+                ? "Customer activated successfully."
+                : "Customer deactivated successfully.",
+            data: updatedCustomer
+        });
+
+    } catch (error) {
+        console.error("Customer status update failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update customer status."
+        });
+    }
+});
+
+// ============================================
+// ADMIN - GET CUSTOMER ORDER HISTORY
+// ============================================
+
+app.get("/api/admin/customers/:id/orders", async (req, res) => {
+    try {
+        // 1. Authenticate admin session.
+        const sessionToken = req.cookies?.gg_session;
+
+        if (!sessionToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to access customer orders."
+            });
+        }
+
+        const tokenHash = createHash("sha256")
+            .update(sessionToken)
+            .digest("hex");
+
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (
+            !session ||
+            session.expiresAt <= new Date() ||
+            !session.user.isActive
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Your session is invalid or expired."
+            });
+        }
+
+        if (session.user.role !== "ADMIN") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+        }
+
+        // 2. Validate customer ID.
+        const customerId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(customerId) || customerId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid customer ID."
+            });
+        }
+
+        // 3. Verify customer exists and is a CUSTOMER.
+        const customer = await prisma.user.findUnique({
+            where: { id: customerId },
+            select: { id: true, name: true, email: true, role: true }
+        });
+
+        if (!customer) {
+            return res.status(404).json({
+                success: false,
+                message: "Customer not found."
+            });
+        }
+
+        if (customer.role !== "CUSTOMER") {
+            return res.status(403).json({
+                success: false,
+                message: "This account is not a customer."
+            });
+        }
+
+        // 4. Pagination (reuse pattern from admin orders).
+        const page = Number(req.query.page || 1);
+        const limit = Number(req.query.limit || 20);
+
+        if (
+            !Number.isSafeInteger(page) ||
+            page < 1 ||
+            !Number.isSafeInteger(limit) ||
+            limit < 1 ||
+            limit > 100
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pagination parameters."
+            });
+        }
+
+        // 5. Fetch orders for this customer.
+        const [orders, totalOrders] = await prisma.$transaction([
+            prisma.order.findMany({
+                where: { userId: customerId },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+                select: {
+                    orderNumber: true,
+                    subtotal: true,
+                    deliveryCharge: true,
+                    total: true,
+                    paymentMethod: true,
+                    paymentStatus: true,
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    items: {
+                        select: {
+                            productName: true,
+                            unitPrice: true,
+                            quantity: true,
+                            lineTotal: true
+                        }
+                    }
+                }
+            }),
+            prisma.order.count({ where: { userId: customerId } })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                customer: {
+                    id: customer.id,
+                    name: customer.name,
+                    email: customer.email
+                },
+                orders,
+                pagination: {
+                    currentPage: page,
+                    pageSize: limit,
+                    totalOrders,
+                    totalPages: Math.ceil(totalOrders / limit)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Admin customer orders retrieval failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve customer orders."
+        });
+    }
+});
+
+// ============================================
+// ADMIN - ANALYTICS ENDPOINTS
+// ============================================
+
+// Helper: date range filter
+function buildDateFilter(period) {
+    const now = new Date();
+    let startDate;
+
+    switch (period) {
+        case "day":
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+        case "week":
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+        case "month":
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+        case "year":
+            startDate = new Date(now.getFullYear(), 0, 1);
+            break;
+        default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1); // default: this month
+    }
+
+    return { createdAt: { gte: startDate } };
+}
+
+// GET /api/admin/analytics/summary
+app.get("/api/admin/analytics/summary", async (req, res) => {
+    try {
+        // Authenticate admin
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const period = req.query.period || "month";
+        const dateFilter = buildDateFilter(period);
+
+        // Parallel queries for all summary metrics
+        const [
+            totalRevenueResult,
+            totalOrdersResult,
+            totalCustomersResult,
+            totalProductsResult,
+            avgOrderValueResult,
+            conversionRateResult
+        ] = await Promise.all([
+            // Total revenue
+            prisma.order.aggregate({
+                where: { ...dateFilter, status: { not: "CANCELLED" } },
+                _sum: { total: true }
+            }),
+            // Total orders
+            prisma.order.count({ where: dateFilter }),
+            // Total customers
+            prisma.user.count({ where: { role: "CUSTOMER" } }),
+            // Total products
+            prisma.product.count({ where: { isActive: true } }),
+            // Average order value
+            prisma.order.aggregate({
+                where: { ...dateFilter, status: { not: "CANCELLED" } },
+                _avg: { total: true }
+            }),
+            // Conversion rate: orders / unique visitors (approximated via sessions)
+            // For now: orders with paymentStatus = PAID / total orders
+            prisma.order.groupBy({
+                by: ["paymentStatus"],
+                where: dateFilter,
+                _count: { paymentStatus: true }
+            })
+        ]);
+
+        const paidOrders = conversionRateResult.find(r => r.paymentStatus === "PAID")?._count.paymentStatus || 0;
+        const totalOrdersCount = totalOrdersResult;
+        const conversionRate = totalOrdersCount > 0 ? (paidOrders / totalOrdersCount * 100) : 0;
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                period,
+                totalRevenue: totalRevenueResult._sum.total || 0,
+                totalOrders: totalOrdersCount,
+                totalCustomers: totalCustomersResult,
+                totalProducts: totalProductsResult,
+                avgOrderValue: avgOrderValueResult._avg.total || 0,
+                conversionRate: Math.round(conversionRate * 100) / 100
+            }
+        });
+
+    } catch (error) {
+        console.error("Analytics summary error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load analytics summary." });
+    }
+});
+
+// GET /api/admin/analytics/revenue
+app.get("/api/admin/analytics/revenue", async (req, res) => {
+    try {
+        // Authenticate admin (same pattern)
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const period = req.query.period || "month"; // day, week, month, year
+        const dateFilter = buildDateFilter(period);
+
+        // Determine grouping granularity
+        let groupByFormat;
+        let labelFormat;
+        if (period === "day") {
+            groupByFormat = "%H:00"; // hourly
+            labelFormat = "HH:mm";
+        } else if (period === "week") {
+            groupByFormat = "%Y-%m-%d"; // daily
+            labelFormat = "MMM dd";
+        } else if (period === "month") {
+            groupByFormat = "%Y-%m-%d"; // daily
+            labelFormat = "MMM dd";
+        } else {
+            groupByFormat = "%Y-%m"; // monthly
+            labelFormat = "MMM yyyy";
+        }
+
+        // Revenue over time (completed orders only) - using subquery to satisfy ONLY_FULL_GROUP_BY
+        const revenueData = await prisma.$queryRaw(
+            Prisma.sql`
+                SELECT 
+                    period,
+                    SUM(revenue) as revenue,
+                    SUM(orders) as orders
+                FROM (
+                    SELECT 
+                        DATE_FORMAT(createdAt, ${groupByFormat}) as period,
+                        CAST(total AS DECIMAL(10,2)) as revenue,
+                        1 as orders
+                    FROM \`Order\`
+                    WHERE createdAt >= ${dateFilter.createdAt.gte}
+                      AND status != 'CANCELLED'
+                ) as t
+                GROUP BY period
+                ORDER BY period ASC
+            `
+        );
+
+
+        // Format for chart
+        const formatted = revenueData.map(row => ({
+            period: row.period,
+            revenue: Number(row.revenue),
+            orders: Number(row.orders)
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: { period, revenue: formatted }
+        });
+
+    } catch (error) {
+        console.error("Analytics revenue error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load revenue data." });
+    }
+});
+
+// GET /api/admin/analytics/top-products
+app.get("/api/admin/analytics/top-products", async (req, res) => {
+    try {
+        // Authenticate admin
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const period = req.query.period || "month";
+        const limit = Math.min(Number(req.query.limit) || 10, 50);
+        const dateFilter = buildDateFilter(period);
+
+        // Top products by revenue
+        const topByRevenue = await prisma.$queryRaw`
+            SELECT 
+                oi.productName,
+                SUM(oi.quantity) as totalQuantity,
+                SUM(CAST(oi.lineTotal AS DECIMAL(10,2))) as totalRevenue,
+                COUNT(DISTINCT oi.orderId) as orderCount
+            FROM OrderItem oi
+            JOIN \`Order\` o ON oi.orderId = o.id
+            WHERE o.createdAt >= ${dateFilter.createdAt.gte}
+              AND o.status != 'CANCELLED'
+            GROUP BY oi.productName
+            ORDER BY totalRevenue DESC
+            LIMIT ${limit}
+        `;
+
+        // Top products by quantity
+        const topByQuantity = await prisma.$queryRaw`
+            SELECT 
+                oi.productName,
+                SUM(oi.quantity) as totalQuantity,
+                SUM(CAST(oi.lineTotal AS DECIMAL(10,2))) as totalRevenue,
+                COUNT(DISTINCT oi.orderId) as orderCount
+            FROM OrderItem oi
+            JOIN \`Order\` o ON oi.orderId = o.id
+            WHERE o.createdAt >= ${dateFilter.createdAt.gte}
+              AND o.status != 'CANCELLED'
+            GROUP BY oi.productName
+            ORDER BY totalQuantity DESC
+            LIMIT ${limit}
+        `;
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                period,
+                topByRevenue: topByRevenue.map(r => ({
+                    productName: r.productName,
+                    totalQuantity: Number(r.totalQuantity),
+                    totalRevenue: Number(r.totalRevenue),
+                    orderCount: Number(r.orderCount)
+                })),
+                topByQuantity: topByQuantity.map(r => ({
+                    productName: r.productName,
+                    totalQuantity: Number(r.totalQuantity),
+                    totalRevenue: Number(r.totalRevenue),
+                    orderCount: Number(r.orderCount)
+                }))
+            }
+        });
+
+    } catch (error) {
+        console.error("Analytics top-products error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load top products." });
+    }
+});
+
+// GET /api/admin/analytics/conversion
+app.get("/api/admin/analytics/conversion", async (req, res) => {
+    try {
+        // Authenticate admin
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const period = req.query.period || "month";
+        const dateFilter = buildDateFilter(period);
+
+        // Order status funnel
+        const statusFunnel = await prisma.order.groupBy({
+            by: ["status"],
+            where: dateFilter,
+            _count: { status: true }
+        });
+
+        // Payment status funnel
+        const paymentFunnel = await prisma.order.groupBy({
+            by: ["paymentStatus"],
+            where: dateFilter,
+            _count: { paymentStatus: true }
+        });
+
+        // Total sessions (unique visitors proxy) - using sessions created in period
+        const totalSessions = await prisma.session.count({
+            where: { createdAt: { gte: dateFilter.createdAt.gte } }
+        });
+
+        const totalOrders = statusFunnel.reduce((sum, s) => sum + s._count.status, 0);
+        const completedOrders = statusFunnel.find(s => s.status === "DELIVERED")?._count.status || 0;
+        const paidOrders = paymentFunnel.find(p => p.paymentStatus === "PAID")?._count.paymentStatus || 0;
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                period,
+                totalSessions,
+                totalOrders,
+                completedOrders,
+                paidOrders,
+                sessionToOrderRate: totalSessions > 0 ? Math.round((totalOrders / totalSessions) * 10000) / 100 : 0,
+                orderToPaymentRate: totalOrders > 0 ? Math.round((paidOrders / totalOrders) * 10000) / 100 : 0,
+                orderToCompleteRate: totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 10000) / 100 : 0,
+                statusFunnel: statusFunnel.map(s => ({ status: s.status, count: s._count.status })),
+                paymentFunnel: paymentFunnel.map(p => ({ status: p.paymentStatus, count: p._count.paymentStatus }))
+            }
+        });
+
+    } catch (error) {
+        console.error("Analytics conversion error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load conversion data." });
+    }
+});
+// ============================================
+// ADMIN - CATEGORIES MANAGEMENT
+// ============================================
+
+// GET /api/admin/categories
+app.get("/api/admin/categories", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const categories = await prisma.category.findMany({
+            orderBy: { name: "asc" },
+            include: {
+                _count: { select: { product: true } }
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: categories.map(c => ({
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                productCount: c._count.products,
+                createdAt: c.createdAt,
+                updatedAt: c.updatedAt
+            }))
+        });
+
+    } catch (error) {
+        console.error("Categories fetch error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load categories." });
+    }
+});
+
+// POST /api/admin/categories
+app.post("/api/admin/categories", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const { name, slug } = req.body || {};
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Category name is required." });
+        }
+
+        const cleanName = name.trim();
+        if (cleanName.length > 100) {
+            return res.status(400).json({ success: false, message: "Name must not exceed 100 characters." });
+        }
+
+        let cleanSlug = slug?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || cleanName.toLowerCase().replace(/\s+/g, "-");
+        if (cleanSlug.length > 120) cleanSlug = cleanSlug.slice(0, 120);
+
+        // Check unique
+        const existing = await prisma.category.findFirst({
+            where: { OR: [{ name: cleanName }, { slug: cleanSlug }] }
+        });
+        if (existing) {
+            return res.status(409).json({ success: false, message: "Category with this name or slug already exists." });
+        }
+
+        const category = await prisma.category.create({
+            data: { name: cleanName, slug: cleanSlug }
+        });
+
+        return res.status(201).json({ success: true, message: "Category created.", data: category });
+
+    } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(409).json({ success: false, message: "Category already exists." });
+        }
+        console.error("Category create error:", error);
+        return res.status(500).json({ success: false, message: "Unable to create category." });
+    }
+});
+
+// PUT /api/admin/categories/:id
+app.put("/api/admin/categories/:id", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const categoryId = Number(req.params.id);
+        if (!Number.isSafeInteger(categoryId) || categoryId < 1) {
+            return res.status(400).json({ success: false, message: "Invalid category ID." });
+        }
+
+        const { name, slug } = req.body || {};
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Category name is required." });
+        }
+
+        const cleanName = name.trim();
+        if (cleanName.length > 100) {
+            return res.status(400).json({ success: false, message: "Name must not exceed 100 characters." });
+        }
+
+        let cleanSlug = slug?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || cleanName.toLowerCase().replace(/\s+/g, "-");
+        if (cleanSlug.length > 120) cleanSlug = cleanSlug.slice(0, 120);
+
+        // Check exists
+        const existingCategory = await prisma.category.findUnique({ where: { id: categoryId } });
+        if (!existingCategory) {
+            return res.status(404).json({ success: false, message: "Category not found." });
+        }
+
+        // Check unique (excluding self)
+        const conflict = await prisma.category.findFirst({
+            where: {
+                OR: [{ name: cleanName }, { slug: cleanSlug }],
+                NOT: { id: categoryId }
+            }
+        });
+        if (conflict) {
+            return res.status(409).json({ success: false, message: "Category with this name or slug already exists." });
+        }
+
+        const category = await prisma.category.update({
+            where: { id: categoryId },
+            data: { name: cleanName, slug: cleanSlug }
+        });
+
+        return res.status(200).json({ success: true, message: "Category updated.", data: category });
+
+    } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(409).json({ success: false, message: "Category already exists." });
+        }
+        console.error("Category update error:", error);
+        return res.status(500).json({ success: false, message: "Unable to update category." });
+    }
+});
+
+// DELETE /api/admin/categories/:id
+app.delete("/api/admin/categories/:id", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const categoryId = Number(req.params.id);
+        if (!Number.isSafeInteger(categoryId) || categoryId < 1) {
+            return res.status(400).json({ success: false, message: "Invalid category ID." });
+        }
+
+        // Check if category has products
+        const productCount = await prisma.product.count({ where: { categoryId } });
+        if (productCount > 0) {
+            return res.status(409).json({ success: false, message: `Cannot delete: ${productCount} product(s) use this category.` });
+        }
+
+        await prisma.category.delete({ where: { id: categoryId } });
+
+        return res.status(200).json({ success: true, message: "Category deleted." });
+
+    } catch (error) {
+        if (error.code === "P2003") {
+            return res.status(409).json({ success: false, message: "Cannot delete: category is in use." });
+        }
+        console.error("Category delete error:", error);
+        return res.status(500).json({ success: false, message: "Unable to delete category." });
+    }
+});
+
+// ============================================
+// ADMIN - BRANDS MANAGEMENT
+// ============================================
+
+// GET /api/admin/brands
+app.get("/api/admin/brands", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const brands = await prisma.brand.findMany({
+            orderBy: { name: "asc" },
+            include: {
+                _count: { select: { product: true } }
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: brands.map(b => ({
+                id: b.id,
+                name: b.name,
+                productCount: b._count.products,
+                createdAt: b.createdAt,
+                updatedAt: b.updatedAt
+            }))
+        });
+
+    } catch (error) {
+        console.error("Brands fetch error:", error);
+        return res.status(500).json({ success: false, message: "Unable to load brands." });
+    }
+});
+
+// POST /api/admin/brands
+app.post("/api/admin/brands", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const { name } = req.body || {};
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Brand name is required." });
+        }
+
+        const cleanName = name.trim();
+        if (cleanName.length > 100) {
+            return res.status(400).json({ success: false, message: "Name must not exceed 100 characters." });
+        }
+
+        const existing = await prisma.brand.findUnique({ where: { name: cleanName } });
+        if (existing) {
+            return res.status(409).json({ success: false, message: "Brand already exists." });
+        }
+
+        const brand = await prisma.brand.create({ data: { name: cleanName } });
+
+        return res.status(201).json({ success: true, message: "Brand created.", data: brand });
+
+    } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(409).json({ success: false, message: "Brand already exists." });
+        }
+        console.error("Brand create error:", error);
+        return res.status(500).json({ success: false, message: "Unable to create brand." });
+    }
+});
+
+// PUT /api/admin/brands/:id
+app.put("/api/admin/brands/:id", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const brandId = Number(req.params.id);
+        if (!Number.isSafeInteger(brandId) || brandId < 1) {
+            return res.status(400).json({ success: false, message: "Invalid brand ID." });
+        }
+
+        const { name } = req.body || {};
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Brand name is required." });
+        }
+
+        const cleanName = name.trim();
+        if (cleanName.length > 100) {
+            return res.status(400).json({ success: false, message: "Name must not exceed 100 characters." });
+        }
+
+        const existingBrand = await prisma.brand.findUnique({ where: { id: brandId } });
+        if (!existingBrand) {
+            return res.status(404).json({ success: false, message: "Brand not found." });
+        }
+
+        const conflict = await prisma.brand.findFirst({
+            where: { name: cleanName, NOT: { id: brandId } }
+        });
+        if (conflict) {
+            return res.status(409).json({ success: false, message: "Brand already exists." });
+        }
+
+        const brand = await prisma.brand.update({
+            where: { id: brandId },
+            data: { name: cleanName }
+        });
+
+        return res.status(200).json({ success: true, message: "Brand updated.", data: brand });
+
+    } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(409).json({ success: false, message: "Brand already exists." });
+        }
+        console.error("Brand update error:", error);
+        return res.status(500).json({ success: false, message: "Unable to update brand." });
+    }
+});
+
+// DELETE /api/admin/brands/:id
+app.delete("/api/admin/brands/:id", async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.gg_session;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: "Please log in." });
+        }
+
+        const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") {
+            return res.status(403).json({ success: false, message: "Administrator access required." });
+        }
+
+        const brandId = Number(req.params.id);
+        if (!Number.isSafeInteger(brandId) || brandId < 1) {
+            return res.status(400).json({ success: false, message: "Invalid brand ID." });
+        }
+
+        const productCount = await prisma.product.count({ where: { brandId } });
+        if (productCount > 0) {
+            return res.status(409).json({ success: false, message: `Cannot delete: ${productCount} product(s) use this brand.` });
+        }
+
+        await prisma.brand.delete({ where: { id: brandId } });
+
+        return res.status(200).json({ success: true, message: "Brand deleted." });
+
+    } catch (error) {
+        if (error.code === "P2003") {
+            return res.status(409).json({ success: false, message: "Cannot delete: brand is in use." });
+        }
+        console.error("Brand delete error:", error);
+        return res.status(500).json({ success: false, message: "Unable to delete brand." });
+    }
+});
 
 // ============================================
 // START SERVER

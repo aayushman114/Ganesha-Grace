@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { PrismaClient } = require("../generated/prisma-cjs-js/client");
+const { PrismaClient } = require("../generated/prisma-client-js/client.js");
 const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
 
 const databaseUrl = new URL(process.env.DATABASE_URL);
