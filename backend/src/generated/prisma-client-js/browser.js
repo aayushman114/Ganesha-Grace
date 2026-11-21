@@ -54,3 +54,4 @@ const Prisma = __importStar(require("./internal/prismaNamespaceBrowser.js"));
 exports.Prisma = Prisma;
 exports.$Enums = __importStar(require("./enums.js"));
 __exportStar(require("./enums.js"), exports);
+//# sourceMappingURL=browser.js.map

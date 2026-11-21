@@ -4,7 +4,7 @@
 // GANESH GRACE - SHOPPING CART
 // ============================================
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = "http://127.0.0.1:3000/api";
 const CART_STORAGE_KEY = "ganesh-grace-cart";
 
 // HTML elements

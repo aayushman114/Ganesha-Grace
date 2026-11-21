@@ -130,3 +130,15 @@ model user {
   @@index([isActive], map: "User_isActive_idx")
   @@index([role], map: "User_role_idx")
 }
+
+model heroBanner {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(100)
+  subtitle  String?  @db.VarChar(200)
+  imageUrl  String   @db.VarChar(500)
+  link      String?  @db.VarChar(200)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}

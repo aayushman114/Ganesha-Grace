@@ -1,4 +1,4 @@
-const AUTH_API_URL = "http://localhost:3000/api";
+const AUTH_API_URL = "http://127.0.0.1:3000/api";
 
 const registerForm = document.getElementById("register-form");
 const registerButton = document.getElementById("register-button");

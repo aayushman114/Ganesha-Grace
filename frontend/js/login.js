@@ -51,9 +51,11 @@ loginForm.addEventListener("submit", async (event) => {
             true
         );
 
-        // Redirect to the homepage after successful login.
+
+        // Redirect based on role
+        const redirectUrl = result.data.role === "ADMIN" ? "admin.html" : "index.html";
         window.setTimeout(() => {
-            window.location.href = "index.html";
+            window.location.href = redirectUrl;
         }, 1200);
 
     } catch (error) {

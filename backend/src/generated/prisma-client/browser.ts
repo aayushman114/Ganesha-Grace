@@ -52,3 +52,8 @@ export type session = Prisma.sessionModel
  * 
  */
 export type user = Prisma.userModel
+/**
+ * Model heroBanner
+ * 
+ */
+export type heroBanner = Prisma.heroBannerModel

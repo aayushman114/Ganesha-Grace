@@ -1,6 +1,74 @@
 const prisma = require("./config/prisma");
 
 // ============================================
+// CREATE HERO BANNER TABLE IF NOT EXISTS
+// ============================================
+async function ensureHeroBannerTable() {
+    try {
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS \`herobanner\` (
+                \`id\` INT NOT NULL AUTO_INCREMENT,
+                \`title\` VARCHAR(100) NOT NULL,
+                \`subtitle\` VARCHAR(200) NULL,
+                \`imageUrl\` VARCHAR(500) NOT NULL,
+                \`link\` VARCHAR(200) NULL,
+                \`sortOrder\` INT NOT NULL DEFAULT 0,
+                \`isActive\` BOOLEAN NOT NULL DEFAULT true,
+                \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                \`updatedAt\` DATETIME(3) NOT NULL,
+                PRIMARY KEY (\`id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `);
+        console.log("Hero banner table ensured.");
+    } catch (error) {
+        console.error("Failed to create hero banner table:", error.message);
+    }
+}
+
+// ============================================
+// HERO BANNERS
+// ============================================
+const heroBanners = [
+    {
+        id: 1,
+        title: "New Arrivals",
+        subtitle: "Discover the latest in skincare",
+        imageUrl: "./images/hero-banner-1.jpg",
+        link: "./shop.html?new=true",
+        sortOrder: 1,
+        isActive: true
+    },
+    {
+        id: 2,
+        title: "Summer Essentials",
+        subtitle: "Protect & glow all season",
+        imageUrl: "./images/hero-banner-2.jpg",
+        link: "./shop.html?category=sun-protection",
+        sortOrder: 2,
+        isActive: true
+    },
+    {
+        id: 3,
+        title: "Best Sellers",
+        subtitle: "Customer favorites at great prices",
+        imageUrl: "./images/hero-banner-3.jpg",
+        link: "./shop.html?sort=featured",
+        sortOrder: 3,
+        isActive: true
+    }
+];
+
+// ============================================
+// PROMO BANNER
+// ============================================
+const promoBanner = {
+    title: "Summer Sale",
+    subtitle: "Up to 50% off selected items",
+    imageUrl: "./images/hero-banner-1.jpg",
+    link: "./shop.html?sale=true"
+};
+
+// ============================================
 // 10 MAIN CATEGORIES WITH SUBCATEGORIES
 // ============================================
 const categoryHierarchy = [
@@ -258,6 +326,36 @@ async function main() {
             }
         });
     }
+
+    // Ensure hero banner table exists
+    await ensureHeroBannerTable();
+
+    // Seed hero banners
+    for (const banner of heroBanners) {
+        await prisma.heroBanner.upsert({
+            where: { id: banner.id },
+            update: {
+                title: banner.title,
+                subtitle: banner.subtitle,
+                imageUrl: banner.imageUrl,
+                link: banner.link,
+                sortOrder: banner.sortOrder,
+                isActive: banner.isActive,
+                updatedAt: now
+            },
+            create: {
+                id: banner.id,
+                title: banner.title,
+                subtitle: banner.subtitle,
+                imageUrl: banner.imageUrl,
+                link: banner.link,
+                sortOrder: banner.sortOrder,
+                isActive: banner.isActive,
+                updatedAt: now
+            }
+        });
+    }
+    console.log("Hero banners seeded successfully.");
 
     console.log("Demo products seeded successfully with full category hierarchy.");
 }

@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-    origin: "http://127.0.0.1:5500",
+    origin: ["http://127.0.0.1:5500", "http://localhost:5500"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -329,31 +329,30 @@ app.get("/api/categories/:slug/descendants", async (req, res) => {
 
 app.get("/api/hero-banners", async (req, res) => {
     try {
-        const banners = [
-            {
-                id: 1,
-                title: "New Arrivals",
-                subtitle: "Discover the latest in skincare",
-                image: "./images/hero-banner-1.jpg",
-                link: "./shop.html?new=true"
-            },
-            {
-                id: 2,
-                title: "Summer Essentials",
-                subtitle: "Protect & glow all season",
-                image: "./images/hero-banner-2.jpg",
-                link: "./shop.html?category=sun-protection"
-            },
-            {
-                id: 3,
-                title: "Best Sellers",
-                subtitle: "Customer favorites at great prices",
-                image: "./images/hero-banner-3.jpg",
-                link: "./shop.html?sort=featured"
-            }
-        ];
+        const banners = await prisma.heroBanner.findMany({
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" }
+        });
 
-        res.json({ success: true, data: banners });
+        const formatted = banners.map(b => ({
+            id: b.id,
+            title: b.title,
+            subtitle: b.subtitle,
+            image: b.imageUrl,
+            link: b.link
+        }));
+
+        // Fallback if no banners in DB
+        if (formatted.length === 0) {
+            const fallback = [
+                { id: 1, title: "New Arrivals", subtitle: "Discover the latest in skincare", image: "./images/hero-banner-1.jpg", link: "./shop.html?new=true" },
+                { id: 2, title: "Summer Essentials", subtitle: "Protect & glow all season", image: "./images/hero-banner-2.jpg", link: "./shop.html?category=sun-protection" },
+                { id: 3, title: "Best Sellers", subtitle: "Customer favorites at great prices", image: "./images/hero-banner-3.jpg", link: "./shop.html?sort=featured" }
+            ];
+            return res.json({ success: true, data: fallback });
+        }
+
+        res.json({ success: true, data: formatted });
     } catch (error) {
         console.error("Failed to fetch hero banners:", error.message);
         res.status(500).json({ success: false, message: "Unable to retrieve hero banners" });
@@ -367,10 +366,11 @@ app.get("/api/hero-banners", async (req, res) => {
 
 app.get("/api/promo-banner", async (req, res) => {
     try {
+        // Could be a separate model, for now return static
         const promo = {
             title: "Summer Sale",
             subtitle: "Up to 50% off selected items",
-            image: "./images/promo-banner.jpg",
+            image: "./images/hero-banner-1.jpg",
             link: "./shop.html?sale=true"
         };
 
@@ -1437,7 +1437,7 @@ app.get("/api/admin/customers/:id/orders", async (req, res) => {
                     status: true,
                     createdAt: true,
                     updatedAt: true,
-                    items: {
+                    orderitem: {
                         select: {
                             productName: true,
                             unitPrice: true,
@@ -2284,7 +2284,7 @@ app.get("/api/orders/:orderNumber", async (req, res) => {
                 paymentStatus: true,
                 status: true,
                 createdAt: true,
-                items: {
+                orderitem: {
                     select: {
                         productName: true,
                         unitPrice: true,
@@ -2377,7 +2377,7 @@ app.get("/api/orders", async (req, res) => {
                 paymentStatus: true,
                 status: true,
                 createdAt: true,
-                items: {
+                orderitem: {
                     select: {
                         productName: true,
                         unitPrice: true,
@@ -2550,7 +2550,7 @@ app.get("/api/admin/orders", async (req, res) => {
                     status: true,
                     createdAt: true,
                     updatedAt: true,
-                    items: {
+                    orderitem: {
                         select: {
                             productName: true,
                             unitPrice: true,
@@ -2655,7 +2655,7 @@ app.post("/api/orders/:orderNumber/cancel", async (req, res) => {
                     userId: session.user.id
                 },
                 include: {
-                    items: {
+                    orderitem: {
                         select: {
                             productId: true,
                             productName: true,
@@ -2926,7 +2926,7 @@ app.patch("/api/admin/orders/:orderNumber/status", async (req, res) => {
             const order = await tx.order.findUnique({
                 where: { orderNumber },
                 include: {
-                    items: {
+                    orderitem: {
                         select: {
                             productId: true,
                             productName: true,
@@ -3523,7 +3523,7 @@ const requestFingerprint = createHash("sha256")
             paymentStatus: true,
             status: true,
             createdAt: true,
-            items: {
+            orderitem: {
                 select: {
                     productName: true,
                     unitPrice: true,
@@ -3656,7 +3656,7 @@ const requestFingerprint = createHash("sha256")
                     paymentStatus: "PENDING",
                     status: "PENDING",
 
-                    items: {
+                    orderitem: {
                         create: orderItems
                     }
                 },
@@ -3670,7 +3670,7 @@ const requestFingerprint = createHash("sha256")
                     paymentStatus: true,
                     status: true,
                     createdAt: true,
-                    items: {
+                    orderitem: {
                         select: {
                             productName: true,
                             unitPrice: true,
@@ -3761,7 +3761,7 @@ const requestFingerprint = createHash("sha256")
                     paymentStatus: true,
                     status: true,
                     createdAt: true,
-                    items: {
+                    orderitem: {
                         select: {
                             productName: true,
                             unitPrice: true,

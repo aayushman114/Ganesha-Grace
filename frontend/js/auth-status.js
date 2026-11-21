@@ -1,6 +1,8 @@
 const AUTH_STATUS_API = "http://127.0.0.1:3000/api";
+const CART_STORAGE_KEY = "ganesh-grace-cart";
 
 document.addEventListener("DOMContentLoaded", initializeAuthStatus);
+document.addEventListener("DOMContentLoaded", initializeCartCount);
 
 async function initializeAuthStatus() {
     const authStatus = document.getElementById("auth-status");
@@ -104,5 +106,21 @@ async function handleLogout() {
 
         logoutButton.disabled = false;
         logoutButton.textContent = "Log Out";
+    }
+}
+
+function initializeCartCount() {
+    const cartCount = document.getElementById("cart-count");
+    if (!cartCount) return;
+
+    try {
+        const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
+        const totalItems = Array.isArray(savedCart)
+            ? savedCart.reduce((total, [, quantity]) => total + Number(quantity), 0)
+            : 0;
+        cartCount.textContent = totalItems;
+    } catch (error) {
+        console.error("Unable to load cart count:", error);
+        cartCount.textContent = 0;
     }
 }

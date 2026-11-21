@@ -68,3 +68,4 @@ __exportStar(require("./enums.js"), exports);
  * Read more in our [docs](https://pris.ly/d/client).
  */
 exports.PrismaClient = $Class.getPrismaClientClass();
+//# sourceMappingURL=client.js.map

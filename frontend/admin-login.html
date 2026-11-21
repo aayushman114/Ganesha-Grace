@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Login | Ganesha Grace</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+
+    <script src="js/auth-status.js" defer></script>
+    <script src="js/admin-login.js" defer></script>
+</head>
+
+<body>
+
+    <header class="site-header">
+        <div class="header-top">
+            <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
+                Ganesha Grace
+            </a>
+
+            <div class="header-search" role="search">
+                <form id="header-search-form" action="./shop.html" method="get">
+                    <label for="header-search-input" class="visually-hidden">Search products</label>
+                    <input
+                        type="search"
+                        id="header-search-input"
+                        name="search"
+                        placeholder="Search products..."
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="search-submit" aria-label="Search">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="header-actions">
+                <div id="auth-status" class="auth-status">
+                    <a href="./login.html" id="account-link">Log In</a>
+                    <a href="./register.html" id="register-link">Create Account</a>
+                </div>
+
+                <button id="logout-button" class="logout-button" hidden>
+                    Log Out
+                </button>
+
+                <a id="my-orders-link" class="header-link" href="./my-orders.html" aria-label="My Orders">
+                    My Orders
+                </a>
+
+                <a class="cart-link" href="./cart.html" aria-label="Shopping cart">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span id="cart-count" class="cart-count-badge">0</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Login Form -->
+    <main class="auth-container" style="max-width: 420px;">
+        <div class="admin-login-header">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; color: var(--color-primary);">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M8 21h8M12 17v4"></path>
+            </svg>
+            <h1>Admin Panel</h1>
+            <p class="auth-description">Sign in to access the administration dashboard</p>
+        </div>
+
+        <form id="login-form" class="auth-form">
+            <div class="form-group">
+                <label for="email">Email address</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    autocomplete="email"
+                    maxlength="254"
+                    required
+                    placeholder="admin@ganeshgrace.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <button
+                type="submit"
+                id="login-button"
+                class="auth-submit"
+            >
+                Sign In to Dashboard
+            </button>
+
+            <p
+                id="login-message"
+                class="auth-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></p>
+        </form>
+
+        <div class="auth-footer">
+            <a href="./login.html">Customer Login</a>
+        </div>
+
+        <a href="./index.html" class="auth-home">Back to Store</a>
+    </main>
+
+</body>
+</html>

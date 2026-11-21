@@ -53,6 +53,10 @@
                     Log Out
                 </button>
 
+                <a id="my-orders-link" class="header-link" href="./my-orders.html" aria-label="My Orders">
+                    My Orders
+                </a>
+
                 <a class="cart-link" href="./cart.html" aria-label="Shopping cart">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="9" cy="21" r="1"></circle>
@@ -63,16 +67,71 @@
                 </a>
             </div>
         </div>
-
-        <nav class="main-nav" aria-label="Main navigation">
-            <a href="./index.html#home">Home</a>
-            <a href="./shop.html">Categories</a>
-            <a href="./index.html#featured">Featured Products</a>
-            <a href="./my-orders.html">My Orders</a>
-        </nav>
     </header>
 
-        <main>
+    <main>
+        <!-- MOBILE SIDEBAR TOGGLE (outside grid) -->
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Open categories">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            Categories
+        </button>
+
+        <!-- SIDEBAR OVERLAY (Mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+        <!-- LEFT SIDEBAR - Category Tree -->
+        <aside class="home-sidebar" id="home-sidebar">
+            <div class="sidebar-section">
+                <h3>Categories</h3>
+                <button type="button" class="clear-filters-btn" id="clear-category-filter" hidden>Clear category</button>
+                <ul class="category-tree" id="category-tree">
+                    <!-- JavaScript will render category tree here -->
+                </ul>
+
+                <div class="sidebar-section">
+                    <h3>Price Range</h3>
+                    <div class="price-filter">
+                        <label>
+                            <span>Min</span>
+                            <input type="number" id="price-min" placeholder="0" min="0" step="1">
+                        </label>
+                        <label>
+                            <span>Max</span>
+                            <input type="number" id="price-max" placeholder="5000" min="0" step="1">
+                        </label>
+                        <button type="button" class="apply-price-btn" id="apply-price">Apply</button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Rating</h3>
+                    <div class="rating-filter" id="rating-filter">
+                        <label><input type="checkbox" value="4"> ★★★★☆ & up (4.0+)</label>
+                        <label><input type="checkbox" value="3"> ★★★☆☆ & up (3.0+)</label>
+                        <label><input type="checkbox" value="2"> ★★☆☆☆ & up (2.0+)</label>
+                        <label><input type="checkbox" value="1"> ★☆☆☆☆ & up (1.0+)</label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Availability</h3>
+                    <div class="availability-filter">
+                        <label><input type="checkbox" id="in-stock-only" checked> In stock only</label>
+                    </div>
+                </div>
+
+                <button type="button" class="clear-all-filters-btn" id="clear-all-filters">Clear all filters</button>
+
+            </div>
+        </aside>
+        
+        <div class="home-layout">
+        <!-- MAIN CONTENT -->
+        <div class="home-content">
         <!-- Promotional Hero Banner Slider -->
         <section class="hero-banner" id="hero-banner" aria-label="Promotional banners">
             <div class="hero-banner-track" id="hero-banner-track">
@@ -174,6 +233,8 @@
                 <!-- JavaScript will render products here -->
             </div>
         </section>
+            </div>
+        </div>
     </main>
 
     <footer class="site-footer">

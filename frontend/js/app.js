@@ -4,7 +4,7 @@
 // GANESH GRACE - FRONTEND APPLICATION
 // ============================================
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = "http://127.0.0.1:3000/api";
 
 const currentYear = document.getElementById("current-year");
 const productGrid = document.getElementById("product-grid");
@@ -19,10 +19,68 @@ if (currentYear) {
 }
 
 // ============================================
+// Category Box
+// ============================================
+let currentFilter = {
+    category: null,
+    priceMin: null,
+    priceMax: null,
+    rating: null,
+    inStockOnly: true
+};
+let allProducts = [];
+
+const priceMinInput = document.getElementById("price-min");
+const priceMaxInput = document.getElementById("price-max");
+const applyPriceBtn = document.getElementById("apply-price");
+const ratingFilter = document.getElementById("rating-filter");
+const inStockOnlyCheckbox = document.getElementById("in-stock-only");
+const clearAllFiltersBtn = document.getElementById("clear-all-filters");
+
+// Price filter
+applyPriceBtn?.addEventListener("click", () => {
+    currentFilter.priceMin = priceMinInput.value ? parseInt(priceMinInput.value) : null;
+    currentFilter.priceMax = priceMaxInput.value ? parseInt(priceMaxInput.value) : null;
+    applyFiltersAndRender();
+});
+
+// Rating filter
+ratingFilter?.addEventListener("change", (e) => {
+    if (e.target.type === "checkbox") {
+        const value = parseInt(e.target.value);
+        currentFilter.rating = e.target.checked ? value : null;
+        // Uncheck other rating checkboxes (single selection)
+        ratingFilter.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (cb !== e.target) cb.checked = false;
+        });
+        applyFiltersAndRender();
+    }
+});
+
+// Stock filter
+inStockOnlyCheckbox?.addEventListener("change", (e) => {
+    currentFilter.inStockOnly = e.target.checked;
+    applyFiltersAndRender();
+});
+
+// Clear all
+clearAllFiltersBtn?.addEventListener("click", () => {
+    currentFilter = { category: null, priceMin: null, priceMax: null, rating: null, inStockOnly: true };
+    priceMinInput.value = "";
+    priceMaxInput.value = "";
+    ratingFilter.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    inStockOnlyCheckbox.checked = true;
+    // Also clear category selection in tree
+    document.querySelectorAll(".category-tree-link.active").forEach(el => el.classList.remove("active"));
+    document.getElementById("clear-category-filter").hidden = true;
+    applyFiltersAndRender();
+});
+
+// ============================================
 // SHOPPING CART - PERSISTED IN LOCAL STORAGE
 // ============================================
 
-const CART_STORAGE_KEY = "ganesh-grace-cart";
+// CART_STORAGE_KEY declared in auth-status.js (loads first)
 
 function loadCart() {
     try {
@@ -97,6 +155,7 @@ async function fetchProducts() {
             throw new Error("Invalid product response from API.");
         }
 
+        allProducts = result.data;  // Store for filtering
         renderProducts(result.data);
 
     } catch (error) {
@@ -115,6 +174,41 @@ async function fetchProducts() {
 
         productGrid.append(message, retryButton);
     }
+}
+
+// ============================================
+// APPLY FILTERS AND RE-RENDER
+// ============================================
+
+function applyFiltersAndRender() {
+    // Filter products based on currentFilter
+    const filtered = allProducts.filter(product => {
+        // Category filter (if implemented)
+        if (currentFilter.category && product.categoryId !== currentFilter.category) {
+            return false;
+        }
+        // Price range
+        if (currentFilter.priceMin !== null && Number(product.price) < currentFilter.priceMin) {
+            return false;
+        }
+        if (currentFilter.priceMax !== null && Number(product.price) > currentFilter.priceMax) {
+            return false;
+        }
+        // Rating
+        if (currentFilter.rating !== null && Number(product.rating) < currentFilter.rating) {
+            return false;
+        }
+        // Stock
+        if (currentFilter.inStockOnly && (!product.isActive || Number(product.stock) <= 0)) {
+            return false;
+        }
+        return true;
+    });
+
+    // Re-render all product grids on homepage
+    renderProducts(filtered);                    // Main product grid (bestsellers)
+    renderSpecialOffers(filtered.filter(p => p.onSale));  // Special offers
+    renderRecommendedProducts(filtered);         // Recommended
 }
 
 const categoryGrid = document.getElementById("category-grid");
@@ -563,15 +657,10 @@ function renderCategoryShortcuts(categories) {
                 src="${imageUrl}"
                 alt="${category.name}"
                 loading="lazy"
+                onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjVGMEVCIi8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjQ0M5OTdGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7igJkgbm8gaW1hZ2U8L3RleHQ+Cjwvc3ZnPg=='"
             >
             <span class="category-shortcut-name">${category.name}</span>
         `;
-
-        card.addEventListener("error", (e) => {
-            if (e.target.tagName === "IMG") {
-                e.target.src = "./images/placeholder-category.jpg";
-            }
-        }, true);
 
         categoryShortcutsTrack.appendChild(card);
     });
@@ -623,6 +712,7 @@ function renderFeaturedCategories(categories) {
                 src="${imageUrl}"
                 alt="${category.name}"
                 loading="lazy"
+                onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjVGMEVCIi8+Cjx0ZXh0IHg9IjQwIiB5PSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEwIiBmaWxsPSIjQ0M5OTdGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7igJkgbm8gaW1hZ2U8L3RleHQ+Cjwvc3ZnPg=='"
             >
             <span class="featured-category-name">${category.name}</span>
         `;
@@ -680,24 +770,6 @@ function renderPromoBanner(banner) {
 
 const specialOffersGrid = document.getElementById("special-offers-grid");
 
-async function fetchSpecialOffers() {
-    if (!specialOffersGrid) return;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/products?onSale=true&limit=8`);
-        const result = await response.json();
-
-        if (!result.success || !Array.isArray(result.data)) {
-            throw new Error("Invalid special offers response");
-        }
-
-        renderSpecialOffers(result.data);
-    } catch (error) {
-        console.error("Unable to load special offers:", error);
-        specialOffersGrid.innerHTML = "<p>Could not load special offers.</p>";
-    }
-}
-
 function renderSpecialOffers(products) {
     specialOffersGrid.replaceChildren();
 
@@ -717,26 +789,6 @@ function renderSpecialOffers(products) {
 // ============================================
 
 const recommendedGrid = document.getElementById("recommended-grid");
-
-async function fetchRecommendedProducts() {
-    if (!recommendedGrid) return;
-
-    try {
-        // For now, fetch featured/bestselling products
-        // In future, this could be personalized based on user history
-        const response = await fetch(`${API_BASE_URL}/products?featured=true&limit=8`);
-        const result = await response.json();
-
-        if (!result.success || !Array.isArray(result.data)) {
-            throw new Error("Invalid recommended products response");
-        }
-
-        renderRecommendedProducts(result.data);
-    } catch (error) {
-        console.error("Unable to load recommended products:", error);
-        recommendedGrid.innerHTML = "<p>Could not load recommendations.</p>";
-    }
-}
 
 function renderRecommendedProducts(products) {
     recommendedGrid.replaceChildren();
@@ -864,6 +916,176 @@ if (headerSearchForm) {
 }
 
 // ============================================
+// CATEGORY TREE (Homepage Sidebar)
+// ============================================
+
+const categoryTree = document.getElementById("category-tree");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const sidebarOverlay = document.getElementById("sidebar-overlay");
+const homeSidebar = document.getElementById("home-sidebar");
+
+async function fetchCategoryTree() {
+    if (!categoryTree) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        const result = await response.json();
+
+        if (!result.success || !Array.isArray(result.data)) {
+            throw new Error("Invalid categories response");
+        }
+
+        // Build hierarchical tree from flat category list
+        const categories = result.data;
+        const categoryMap = new Map();
+        const rootCategories = [];
+
+        // First pass: create map of all categories
+        categories.forEach(cat => {
+            categoryMap.set(cat.id, { ...cat, children: [] });
+        });
+
+        // Second pass: build hierarchy
+        categories.forEach(cat => {
+            const node = categoryMap.get(cat.id);
+            if (cat.parentId && categoryMap.has(cat.parentId)) {
+                categoryMap.get(cat.parentId).children.push(node);
+            } else {
+                rootCategories.push(node);
+            }
+        });
+
+        renderCategoryTree(rootCategories);
+    } catch (error) {
+        console.error("Unable to load category tree:", error);
+        categoryTree.innerHTML = "<p>Could not load categories.</p>";
+    }
+}
+
+function renderCategoryTree(categories) {
+    categoryTree.replaceChildren();
+
+    categories.forEach(category => {
+        const li = document.createElement("li");
+        li.className = "category-tree-item";
+
+        const hasChildren = category.children && category.children.length > 0;
+
+        const link = document.createElement("a");
+        link.className = "category-tree-link";
+        link.href = `./shop.html?category=${category.slug}`;
+        link.setAttribute("aria-label", `Shop ${category.name} (${category.productCount} products)`);
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = category.name;
+
+        const countSpan = document.createElement("span");
+        countSpan.className = "category-product-count";
+        countSpan.textContent = `(${category.productCount})`;
+
+        link.append(nameSpan, countSpan);
+
+        if (hasChildren) {
+            const toggleBtn = document.createElement("button");
+            toggleBtn.className = "category-tree-toggle";
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.setAttribute("aria-label", `Toggle ${category.name} subcategories`);
+            toggleBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            `;
+
+            toggleBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const childrenUl = li.querySelector(".category-tree-children");
+                const isExpanded = toggleBtn.getAttribute("aria-expanded") === "true";
+
+                toggleBtn.setAttribute("aria-expanded", !isExpanded);
+                childrenUl.classList.toggle("expanded", !isExpanded);
+            });
+
+            link.appendChild(toggleBtn);
+        }
+
+        li.appendChild(link);
+
+        if (hasChildren) {
+            const childrenUl = document.createElement("ul");
+            childrenUl.className = "category-tree-children";
+            category.children.forEach(child => {
+                const childLi = document.createElement("li");
+                childLi.className = "category-tree-item";
+
+                const childLink = document.createElement("a");
+                childLink.className = "category-tree-link";
+                childLink.href = `./shop.html?category=${child.slug}`;
+                childLink.setAttribute("aria-label", `Shop ${child.name} (${child.productCount} products)`);
+
+                const childNameSpan = document.createElement("span");
+                childNameSpan.textContent = child.name;
+
+                const childCountSpan = document.createElement("span");
+                childCountSpan.className = "category-product-count";
+                childCountSpan.textContent = `(${child.productCount})`;
+
+                childLink.append(childNameSpan, childCountSpan);
+                childLi.appendChild(childLink);
+                childrenUl.appendChild(childLi);
+            });
+
+            li.appendChild(childrenUl);
+        }
+
+        categoryTree.appendChild(li);
+    });
+}
+
+// Sidebar toggle functionality
+function initSidebarToggle() {
+    if (!sidebarToggle || !homeSidebar || !sidebarOverlay) return;
+
+    sidebarToggle.addEventListener("click", () => {
+        const isOpen = homeSidebar.classList.toggle("open");
+        sidebarOverlay.classList.toggle("visible", isOpen);
+        sidebarToggle.setAttribute("aria-expanded", isOpen);
+        sidebarOverlay.setAttribute("aria-hidden", !isOpen);
+        document.body.style.overflow = isOpen ? "hidden" : "";
+    });
+
+    sidebarOverlay.addEventListener("click", () => {
+        homeSidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("visible");
+        sidebarToggle.setAttribute("aria-expanded", "false");
+        sidebarOverlay.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+    });
+
+    // Close sidebar when clicking a category link on mobile
+    categoryTree?.addEventListener("click", (e) => {
+        if (e.target.closest(".category-tree-link") && window.innerWidth <= 768) {
+            homeSidebar.classList.remove("open");
+            sidebarOverlay.classList.remove("visible");
+            sidebarToggle.setAttribute("aria-expanded", "false");
+            sidebarOverlay.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+        }
+    });
+
+    // Handle resize
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) {
+            homeSidebar.classList.remove("open");
+            sidebarOverlay.classList.remove("visible");
+            sidebarToggle.setAttribute("aria-expanded", "false");
+            sidebarOverlay.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+        }
+    });
+}
+
+// ============================================
 // START APPLICATION
 // ============================================
 
@@ -873,11 +1095,11 @@ if (document.getElementById("hero-banner-track")) {
     fetchCategoryShortcuts();
     fetchFeaturedCategories();
     fetchPromoBanner();
-    fetchSpecialOffers();
-    fetchRecommendedProducts();
+    fetchCategoryTree();
+    initSidebarToggle();
 }
 
-// Legacy product grid (for backward compatibility)
+// Load all products (this will also render all grids)
 fetchProducts();
 fetchCategories();
 fetchBrands();

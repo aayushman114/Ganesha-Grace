@@ -1,7 +1,24 @@
 
 const API_BASE_URL = "http://127.0.0.1:3000/api";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // Verify admin role before loading dashboard
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+        const result = await response.json();
+        
+        if (!response.ok || !result.success || !result.data || result.data.role !== "ADMIN") {
+            window.location.href = "admin-login.html";
+            return;
+        }
+    } catch (error) {
+        console.error("Admin auth check failed:", error);
+        window.location.href = "admin-login.html";
+        return;
+    }
     const tableBody = document.getElementById("orders-table-body");
     const messageBox = document.getElementById("admin-message");
 

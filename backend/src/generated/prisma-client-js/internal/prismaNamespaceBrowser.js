@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userOrderByRelevanceFieldEnum = exports.sessionOrderByRelevanceFieldEnum = exports.productOrderByRelevanceFieldEnum = exports.orderitemOrderByRelevanceFieldEnum = exports.orderOrderByRelevanceFieldEnum = exports.categoryOrderByRelevanceFieldEnum = exports.NullsOrder = exports.brandOrderByRelevanceFieldEnum = exports.SortOrder = exports.UserScalarFieldEnum = exports.SessionScalarFieldEnum = exports.ProductScalarFieldEnum = exports.OrderitemScalarFieldEnum = exports.OrderScalarFieldEnum = exports.CategoryScalarFieldEnum = exports.BrandScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.heroBannerOrderByRelevanceFieldEnum = exports.userOrderByRelevanceFieldEnum = exports.sessionOrderByRelevanceFieldEnum = exports.productOrderByRelevanceFieldEnum = exports.orderitemOrderByRelevanceFieldEnum = exports.orderOrderByRelevanceFieldEnum = exports.categoryOrderByRelevanceFieldEnum = exports.NullsOrder = exports.brandOrderByRelevanceFieldEnum = exports.SortOrder = exports.HeroBannerScalarFieldEnum = exports.UserScalarFieldEnum = exports.SessionScalarFieldEnum = exports.ProductScalarFieldEnum = exports.OrderitemScalarFieldEnum = exports.OrderScalarFieldEnum = exports.CategoryScalarFieldEnum = exports.BrandScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -81,7 +81,8 @@ exports.ModelName = {
     orderitem: 'orderitem',
     product: 'product',
     session: 'session',
-    user: 'user'
+    user: 'user',
+    heroBanner: 'heroBanner'
 };
 /*
  * Enums
@@ -171,6 +172,17 @@ exports.UserScalarFieldEnum = {
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
+exports.HeroBannerScalarFieldEnum = {
+    id: 'id',
+    title: 'title',
+    subtitle: 'subtitle',
+    imageUrl: 'imageUrl',
+    link: 'link',
+    sortOrder: 'sortOrder',
+    isActive: 'isActive',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
 exports.SortOrder = {
     asc: 'asc',
     desc: 'desc'
@@ -217,3 +229,10 @@ exports.userOrderByRelevanceFieldEnum = {
     passwordHash: 'passwordHash',
     role: 'role'
 };
+exports.heroBannerOrderByRelevanceFieldEnum = {
+    title: 'title',
+    subtitle: 'subtitle',
+    imageUrl: 'imageUrl',
+    link: 'link'
+};
+//# sourceMappingURL=prismaNamespaceBrowser.js.map
