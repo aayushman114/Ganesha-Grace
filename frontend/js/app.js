@@ -4,7 +4,8 @@
 // GANESH GRACE - FRONTEND APPLICATION
 // ============================================
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 const currentYear = document.getElementById("current-year");
 const productGrid = document.getElementById("product-grid");
@@ -345,7 +346,7 @@ function renderProducts(products) {
         // Brand
         const brand = document.createElement("p");
         brand.className = "product-brand";
-        brand.textContent = product.brand?.name || "Ganesh Grace"
+        brand.textContent = product.brand?.name || "Ganesh Grace";
 
         // Product name
         const name = document.createElement("h3");
@@ -379,7 +380,8 @@ function renderProducts(products) {
         addToCartButton.type = "button";
         addToCartButton.textContent = "Add to Cart";
 
-        addToCartButton.addEventListener("click", () => {
+        addToCartButton.addEventListener("click", (e) => {
+            e.stopPropagation();
             addToCart(product.id);
         });
 
@@ -388,9 +390,17 @@ function renderProducts(products) {
 
         buyNowButton.className = "buy-now";
         buyNowButton.type = "button";
-        buyNowButton.textContent = "Buy Now";
+        buyNowButton.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 7H7l-2 8h16l-2-8z"></path>
+                <circle cx="11" cy="16" r="1"></circle>
+                <circle cx="19" cy="16" r="1"></circle>
+            </svg>
+            Buy Now
+        `;
 
-        buyNowButton.addEventListener("click", () => {
+        buyNowButton.addEventListener("click", (e) => {
+            e.stopPropagation();
             buyNow(product.id);
         });
 
@@ -398,6 +408,12 @@ function renderProducts(products) {
 
         info.append(brand, name, rating, price, productActions);
         card.append(image, info);
+
+        // Make card clickable to go to product detail page
+        card.style.cursor = "pointer";
+        card.addEventListener("click", () => {
+            window.location.href = `./product.html?id=${product.id}`;
+        });
 
         productGrid.appendChild(card);
     });
@@ -412,7 +428,9 @@ function getProductImage(product) {
         1: "cleanser.jpg",
         2: "moisturizer.jpg",
         3: "serum.jpg",
-        4: "sunscreen.jpg"
+        4: "sunscreen.jpg",
+        5: "pond.png",
+        6: "Ponds.png"
     };
 
     return imageNames[product.id] || "placeholder.jpg";

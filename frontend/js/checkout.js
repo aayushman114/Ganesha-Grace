@@ -4,8 +4,8 @@
 // GANESHA GRACE - CHECKOUT
 // ============================================
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
-const CART_STORAGE_KEY = "ganesh-grace-cart";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 const cartCount = document.getElementById("cart-count");
 const checkoutContent = document.getElementById("checkout-content");

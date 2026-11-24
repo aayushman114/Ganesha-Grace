@@ -1,6 +1,6 @@
 generator client {
   provider            = "prisma-client"
-  output              = "../src/generated/prisma-client"
+  output              = "../src/generated/prisma-client-js"
   moduleFormat        = "cjs"
   importFileExtension = "js"
 }
@@ -47,7 +47,7 @@ model order {
   paymentStatus          String      @default("PENDING") @db.VarChar(20)
   status                 String      @default("PENDING") @db.VarChar(30)
   createdAt              DateTime    @default(now())
-  updatedAt              DateTime
+  updatedAt              DateTime    @updatedAt
   userId                 Int?
   idempotencyKey         String?     @unique(map: "Order_idempotencyKey_key") @db.VarChar(64)
   idempotencyRequestHash String?     @db.Char(64)
@@ -93,6 +93,7 @@ model product {
   onSale        Boolean     @default(false)
   originalPrice Decimal?    @db.Decimal(10, 2)
   orderitem     orderitem[]
+  review        review[]
   brand         brand       @relation(fields: [brandId], references: [id], map: "Product_brandId_fkey")
   category      category    @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
 
@@ -126,9 +127,28 @@ model user {
   updatedAt    DateTime
   order        order[]
   session      session[]
+  review       review[]
 
   @@index([isActive], map: "User_isActive_idx")
   @@index([role], map: "User_role_idx")
+}
+
+model review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Int      @db.TinyInt
+  title     String?  @db.VarChar(200)
+  comment   String?  @db.Text
+  isApproved Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "Review_productId_fkey")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Review_userId_fkey")
+
+  @@index([productId], map: "Review_productId_idx")
+  @@index([userId], map: "Review_userId_idx")
+  @@index([isApproved], map: "Review_isApproved_idx")
 }
 
 model heroBanner {

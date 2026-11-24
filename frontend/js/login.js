@@ -1,4 +1,48 @@
-const AUTH_API_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const AUTH_API_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
+
+// Get redirect URL from query param or referrer
+function getRedirectUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    if (redirect) return redirect;
+
+    // Fallback: use document.referrer if it's a local page
+    if (document.referrer && document.referrer.startsWith(window.location.origin)) {
+        try {
+            const referrerUrl = new URL(document.referrer);
+            // Don't redirect to login/register pages
+            if (!referrerUrl.pathname.includes("login") && !referrerUrl.pathname.includes("register")) {
+                return referrerUrl.pathname + referrerUrl.search;
+            }
+        } catch (e) {}
+    }
+
+    return null;
+}
+
+// Check if already logged in and redirect
+async function checkAuthAndRedirect() {
+    try {
+        const response = await fetch(`${AUTH_API_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+        const result = await response.json();
+        if (response.ok && result.success && result.data) {
+            // Already logged in, redirect to intended page or role-based default
+            const redirectUrl = getRedirectUrl() || (result.data.role === "ADMIN" ? "admin.html" : "index.html");
+            window.location.href = redirectUrl;
+            return true;
+        }
+    } catch (error) {
+        // Not logged in, continue
+    }
+    return false;
+}
+
+// Run auth check before showing login form
+checkAuthAndRedirect();
 
 const loginForm = document.getElementById("login-form");
 const loginButton = document.getElementById("login-button");
@@ -52,8 +96,8 @@ loginForm.addEventListener("submit", async (event) => {
         );
 
 
-        // Redirect based on role
-        const redirectUrl = result.data.role === "ADMIN" ? "admin.html" : "index.html";
+        // Redirect using redirect parameter or role-based default
+        const redirectUrl = getRedirectUrl() || (result.data.role === "ADMIN" ? "admin.html" : "index.html");
         window.setTimeout(() => {
             window.location.href = redirectUrl;
         }, 1200);

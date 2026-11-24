@@ -4,8 +4,9 @@
 // GANESHA GRACE - PRODUCT DETAIL PAGE
 // ============================================
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
-const CART_STORAGE_KEY = "ganesh-grace-cart";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
+const PRODUCT_CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
 
 // HTML Elements
 const breadcrumbList = document.getElementById("breadcrumb-list");
@@ -44,7 +45,7 @@ if (currentYear) {
 // Load cart from localStorage
 function loadCart() {
     try {
-        const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
+        const savedCart = JSON.parse(localStorage.getItem(PRODUCT_CART_STORAGE_KEY) || "[]");
         if (!Array.isArray(savedCart)) return new Map();
         return new Map(savedCart.filter(([id, qty]) => Number.isInteger(Number(id)) && Number.isInteger(qty) && Number(id) > 0 && qty > 0).map(([id, qty]) => [Number(id), qty]));
     } catch (e) {
@@ -55,7 +56,7 @@ function loadCart() {
 
 function saveCart() {
     try {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(Array.from(cart.entries())));
+        localStorage.setItem(PRODUCT_CART_STORAGE_KEY, JSON.stringify(Array.from(cart.entries())));
     } catch (e) {
         console.error("Unable to save cart:", e);
     }
@@ -69,8 +70,11 @@ function updateCartCount() {
 
 // Get product ID from URL
 function getProductIdFromUrl() {
+    console.log("[Product] window.location.href:", window.location.href);
+    console.log("[Product] window.location.search:", window.location.search);
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
+    console.log("[Product] Parsed ID:", id);
     return id ? Number(id) : null;
 }
 
@@ -103,63 +107,81 @@ function formatPrice(price) {
 }
 
 function renderBreadcrumb(product) {
-    breadcrumbList.replaceChildren();
+    console.log("[Product] renderBreadcrumb called with:", product);
+    try {
+        breadcrumbList.replaceChildren();
 
-    // Home
-    const homeItem = document.createElement("li");
-    homeItem.innerHTML = '<a href="./index.html">Home</a>';
-    breadcrumbList.appendChild(homeItem);
+        // Home
+        const homeItem = document.createElement("li");
+        homeItem.innerHTML = '<a href="./index.html">Home</a>';
+        breadcrumbList.appendChild(homeItem);
 
-    // Category
-    if (product.category) {
-        const catItem = document.createElement("li");
-        catItem.innerHTML = `<a href="./shop.html?category=${product.category.slug}">${product.category.name}</a>`;
-        breadcrumbList.appendChild(catItem);
+        // Category
+        if (product.category) {
+            const catItem = document.createElement("li");
+            catItem.innerHTML = `<a href="./shop.html?category=${product.category.slug}">${product.category.name}</a>`;
+            breadcrumbList.appendChild(catItem);
+        }
+
+        // Product name (current)
+        const productItem = document.createElement("li");
+        productItem.setAttribute("aria-current", "page");
+        productItem.textContent = product.name;
+        breadcrumbList.appendChild(productItem);
+        console.log("[Product] Breadcrumb rendered");
+    } catch (e) {
+        console.error("[Product] Breadcrumb error:", e);
     }
-
-    // Product name (current)
-    const productItem = document.createElement("li");
-    productItem.setAttribute("aria-current", "page");
-    productItem.textContent = product.name;
-    breadcrumbList.appendChild(productItem);
 }
 
 function renderProductGallery(product) {
-    // Build images array from product
-    productImages = [];
+    console.log("[Product] renderProductGallery called with:", product);
+    try {
+        // Build images array from product
+        productImages = [];
 
-    if (product.imageUrl) {
-        productImages.push(product.imageUrl);
+        if (product.imageUrl) {
+            productImages.push(product.imageUrl);
+        } else {
+            console.warn("[Product] No imageUrl found, using placeholder");
+            productImages.push(getPlaceholderImage());
+        }
+
+        // Add placeholder images for demo (in real app, these would come from product.images relation)
+        // For now, use the main image as all thumbnails
+        if (productImages.length === 1) {
+            productImages = [
+                productImages[0],
+                productImages[0],
+                productImages[0],
+                productImages[0]
+            ];
+        }
+
+        currentImageIndex = 0;
+
+        // Render main image
+        renderMainImage(productImages[0], product.name);
+        console.log("[Product] Main image rendered");
+
+        // Render thumbnails
+        productThumbnails.replaceChildren();
+        productImages.forEach((imgSrc, index) => {
+            const thumb = document.createElement("button");
+            thumb.className = `product-thumb ${index === 0 ? "active" : ""}`;
+            thumb.type = "button";
+            thumb.setAttribute("aria-label", `View image ${index + 1}`);
+            thumb.setAttribute("aria-current", index === 0 ? "true" : "false");
+            thumb.innerHTML = `<img src="${imgSrc}" alt="${product.name} - Image ${index + 1}" loading="lazy">`;
+            thumb.addEventListener("click", () => switchImage(index));
+            productThumbnails.appendChild(thumb);
+        });
+        console.log("[Product] Thumbnails rendered");
+    } catch (e) {
+        console.error("[Product] Gallery rendering error:", e);
+        // Fallback - at least show something
+        productMainImage.innerHTML = `<img src="${getPlaceholderImage()}" alt="${product.name}" loading="eager">`;
     }
-
-    // Add placeholder images for demo (in real app, these would come from product.images relation)
-    // For now, use the main image as all thumbnails
-    if (productImages.length === 1) {
-        productImages = [
-            product.imageUrl,
-            product.imageUrl,
-            product.imageUrl,
-            product.imageUrl
-        ];
-    }
-
-    currentImageIndex = 0;
-
-    // Render main image
-    renderMainImage(productImages[0], product.name);
-
-    // Render thumbnails
-    productThumbnails.replaceChildren();
-    productImages.forEach((imgSrc, index) => {
-        const thumb = document.createElement("button");
-        thumb.className = `product-thumb ${index === 0 ? "active" : ""}`;
-        thumb.type = "button";
-        thumb.setAttribute("aria-label", `View image ${index + 1}`);
-        thumb.setAttribute("aria-current", index === 0 ? "true" : "false");
-        thumb.innerHTML = `<img src="${imgSrc}" alt="${product.name} - Image ${index + 1}" loading="lazy">`;
-        thumb.addEventListener("click", () => switchImage(index));
-        productThumbnails.appendChild(thumb);
-    });
 }
 
 function renderMainImage(src, alt) {
@@ -188,53 +210,67 @@ function switchImage(index) {
 }
 
 function renderProductInfo(product) {
+    console.log("[Product] renderProductInfo called with:", product);
+
     // Category
-    if (product.category) {
-        productCategory.textContent = product.category.name;
-        productCategory.style.display = "inline-block";
-        productCategory.style.cursor = "pointer";
-        productCategory.addEventListener("click", () => {
-            window.location.href = `./shop.html?category=${product.category.slug}`;
-        });
-    } else {
-        productCategory.textContent = "";
-    }
+    try {
+        if (product.category) {
+            productCategory.textContent = product.category.name;
+            productCategory.style.display = "inline-block";
+            productCategory.style.cursor = "pointer";
+            productCategory.onclick = () => {
+                window.location.href = `./shop.html?category=${product.category.slug}`;
+            };
+        } else {
+            productCategory.textContent = "";
+        }
+        console.log("[Product] Category rendered");
+    } catch (e) { console.error("[Product] Category error:", e); }
 
     // Title
-    productTitle.textContent = product.name;
+    try {
+        productTitle.textContent = product.name;
+        console.log("[Product] Title rendered");
+    } catch (e) { console.error("[Product] Title error:", e); }
 
     // Brand
-    if (product.brand) {
-        const brandName = productBrand.querySelector(".brand-name");
-        if (brandName) {
-            brandName.textContent = product.brand.name;
-            productBrand.style.display = "flex";
-            productBrand.style.cursor = "pointer";
-            productBrand.addEventListener("click", () => {
-                window.location.href = `./shop.html?brand=${product.brand.id}`;
-            });
+    try {
+        if (product.brand) {
+            const brandName = productBrand.querySelector(".brand-name");
+            if (brandName) {
+                brandName.textContent = product.brand.name;
+                productBrand.style.display = "flex";
+                productBrand.style.cursor = "pointer";
+                productBrand.onclick = () => {
+                    window.location.href = `./shop.html?brand=${product.brand.id}`;
+                };
+            }
+        } else {
+            productBrand.style.display = "none";
         }
-    } else {
-        productBrand.style.display = "none";
-    }
+        console.log("[Product] Brand rendered");
+    } catch (e) { console.error("[Product] Brand error:", e); }
 
     // Rating
-    renderRating(product.rating);
+    try { renderRating(product.rating); console.log("[Product] Rating rendered"); } catch (e) { console.error("[Product] Rating error:", e); }
 
     // Price
-    renderPrice(product);
+    try { renderPrice(product); console.log("[Product] Price rendered"); } catch (e) { console.error("[Product] Price error:", e); }
 
     // Description
-    const descP = productDescription.querySelector("p");
-    if (descP) {
-        descP.textContent = product.description || "No description available.";
-    }
+    try {
+        const descP = productDescription.querySelector("p");
+        if (descP) {
+            descP.textContent = product.description || "No description available.";
+        }
+        console.log("[Product] Description rendered");
+    } catch (e) { console.error("[Product] Description error:", e); }
 
     // Stock
-    renderStock(product.stock);
+    try { renderStock(product.stock); console.log("[Product] Stock rendered"); } catch (e) { console.error("[Product] Stock error:", e); }
 
     // Meta
-    renderMeta(product);
+    try { renderMeta(product); console.log("[Product] Meta rendered"); } catch (e) { console.error("[Product] Meta error:", e); }
 }
 
 function renderRating(rating) {
@@ -368,6 +404,10 @@ function addToCart(productId, quantity) {
     cart.set(productId, newQty);
     saveCart();
     updateCartCount();
+    // Also update the global cart count in header (used by auth-status.js)
+    if (typeof window.updateCartCount === "function") {
+        window.updateCartCount();
+    }
     showNotification("Added to cart!", "success");
     return true;
 }
@@ -408,9 +448,10 @@ function showNotification(message, type = "info") {
 // RELATED PRODUCTS
 // ============================================
 
-async function fetchRelatedProducts(categoryId, excludeId, limit = 4) {
+async function fetchRelatedProducts(categorySlug, excludeId, limit = 4) {
     try {
-        const response = await fetch(`${API_BASE_URL}/products?category=${categoryId}&limit=${limit + 1}&featured=false`);
+        // Use categoryTree=true to include subcategory products for better related product suggestions
+        const response = await fetch(`${API_BASE_URL}/products?category=${categorySlug}&categoryTree=true&limit=${limit + 1}&featured=false`);
         const result = await response.json();
 
         if (!result.success || !Array.isArray(result.data)) {
@@ -439,6 +480,76 @@ function renderRelatedProducts(products) {
         const card = createProductCard(product);
         relatedProductsGrid.appendChild(card);
     });
+}
+
+// ============================================
+// REVIEWS
+// ============================================
+
+async function fetchAndRenderReviews(productId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}/reviews`);
+        const result = await response.json();
+
+        if (!result.success || !Array.isArray(result.data)) {
+            return;
+        }
+
+        renderReviews(result.data);
+    } catch (error) {
+        console.error("Failed to fetch reviews:", error);
+    }
+}
+
+function renderReviews(reviews) {
+    const reviewsList = document.getElementById("reviews-list");
+    const reviewsSummary = document.getElementById("reviews-summary");
+    const reviewFormSection = document.getElementById("review-form-section");
+
+    if (!reviewsList) return;
+
+    if (reviews.length === 0) {
+        reviewsList.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review!</p>';
+        if (reviewsSummary) reviewsSummary.style.display = "none";
+        if (reviewFormSection) reviewFormSection.style.display = "block";
+        return;
+    }
+
+    // Show summary
+    if (reviewsSummary) reviewsSummary.style.display = "block";
+    if (reviewFormSection) reviewFormSection.style.display = "block";
+
+    // Calculate average
+    const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    document.getElementById("avg-score").textContent = avgRating.toFixed(1);
+    document.getElementById("avg-stars").innerHTML = renderRatingStars(avgRating);
+    document.getElementById("review-count").textContent = `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
+
+    // Render reviews
+    reviewsList.innerHTML = reviews.map(review => `
+        <article class="review-card">
+            <div class="review-header">
+                <div class="review-user">
+                    <span class="user-name">${escapeHtml(review.userName)}</span>
+                    <span class="review-date">${formatDate(review.createdAt)}</span>
+                </div>
+                <div class="review-rating">${renderRatingStars(review.rating)}</div>
+            </div>
+            ${review.title ? `<h4 class="review-title">${escapeHtml(review.title)}</h4>` : ''}
+            <p class="review-comment">${escapeHtml(review.comment || '')}</p>
+        </article>
+    `).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function createProductCard(product) {
@@ -519,6 +630,8 @@ function getPlaceholderImage() {
 // ============================================
 
 async function init() {
+    console.log("[Product] Initializing product page");
+
     // Load cart
     cart = loadCart();
     updateCartCount();
@@ -528,6 +641,7 @@ async function init() {
 
     // Get product ID from URL
     const productId = getProductIdFromUrl();
+    console.log("[Product] Product ID from URL:", productId);
 
     if (!productId) {
         showErrorState("No product ID specified.");
@@ -539,27 +653,42 @@ async function init() {
 
     try {
         // Fetch product data
+        console.log("[Product] Fetching product data...");
         const product = await fetchProduct(productId);
+        console.log("[Product] Product data received:", product);
         currentProduct = product;
 
-        // Render product page
-        renderBreadcrumb(product);
-        renderProductGallery(product);
-        renderProductInfo(product);
+        // Render product page - wrap each in try-catch to isolate errors
+        try { renderBreadcrumb(product); console.log("[Product] Breadcrumb rendered"); } catch (e) { console.error("[Product] Breadcrumb error:", e); }
+        try { renderProductGallery(product); console.log("[Product] Gallery rendered"); } catch (e) { console.error("[Product] Gallery error:", e); }
+        try { renderProductInfo(product); console.log("[Product] Info rendered"); } catch (e) { console.error("[Product] Info error:", e); }
 
         // Set up action buttons
-        setupActionButtons(product);
+        try { setupActionButtons(product); console.log("[Product] Action buttons setup"); } catch (e) { console.error("[Product] Action buttons error:", e); }
 
         // Fetch and render related products
-        if (product.category?.id) {
-            const related = await fetchRelatedProducts(product.category.id, product.id);
-            renderRelatedProducts(related);
+        if (product.category?.slug) {
+            try {
+                const related = await fetchRelatedProducts(product.category.slug, product.id);
+                renderRelatedProducts(related);
+                console.log("[Product] Related products rendered");
+            } catch (e) { console.error("[Product] Related products error:", e); }
         }
+
+        // Fetch and render reviews
+        try {
+            await fetchAndRenderReviews(product.id);
+            console.log("[Product] Reviews rendered");
+        } catch (e) { console.error("[Product] Reviews error:", e); }
+
+        // Setup review form
+        try { setupReviewForm(product.id); console.log("[Product] Review form setup"); } catch (e) { console.error("[Product] Review form error:", e); }
 
         // Update page title
         document.title = `${product.name} | Ganesha Grace`;
 
     } catch (error) {
+        console.error("[Product] Fatal error:", error);
         showErrorState(error.message || "Failed to load product.");
     }
 }
@@ -576,6 +705,106 @@ function setupActionButtons(product) {
     });
 }
 
+function setupReviewForm(productId) {
+    const reviewForm = document.getElementById("review-form");
+    const reviewFormSection = document.getElementById("review-form-section");
+    const reviewFormMessage = document.getElementById("review-form-message");
+    const starInputs = document.querySelectorAll('#star-rating-input input[name="rating"]');
+
+    if (!reviewForm) return;
+
+    // Star rating interaction
+    starInputs.forEach(input => {
+        input.addEventListener("change", () => {
+            // Visual feedback handled by CSS
+        });
+    });
+
+    reviewForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const rating = document.querySelector('#star-rating-input input[name="rating"]:checked');
+        const title = document.getElementById("review-title").value.trim();
+        const comment = document.getElementById("review-comment").value.trim();
+
+        if (!rating) {
+            showReviewMessage("Please select a rating", "error");
+            return;
+        }
+
+        if (!comment) {
+            showReviewMessage("Please write a review", "error");
+            return;
+        }
+
+        const submitBtn = document.getElementById("submit-review-btn");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+
+        try {
+            // Get session token
+            const token = getCookie("session_token");
+            if (!token) {
+                showReviewMessage("Please log in to submit a review", "error");
+                return;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/products/${productId}/reviews`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    rating: parseInt(rating.value),
+                    title: title || null,
+                    comment: comment
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                showReviewMessage(result.message || "Failed to submit review", "error");
+                return;
+            }
+
+            showReviewMessage("Review submitted successfully!", "success");
+            reviewForm.reset();
+
+            // Refresh reviews
+            await fetchAndRenderReviews(productId);
+
+        } catch (error) {
+            console.error("Review submission error:", error);
+            showReviewMessage("Unable to submit review. Please try again.", "error");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit Review";
+        }
+    });
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function showReviewMessage(message, type) {
+    const messageEl = document.getElementById("review-form-message");
+    if (!messageEl) return;
+
+    messageEl.textContent = message;
+    messageEl.className = `form-message ${type}`;
+    messageEl.hidden = false;
+
+    setTimeout(() => {
+        messageEl.hidden = true;
+    }, 5000);
+}
+
 function showLoadingState() {
     productTitle.textContent = "Loading...";
     productPrice.innerHTML = '<span class="loading-skeleton"></span>';
@@ -584,7 +813,8 @@ function showLoadingState() {
 
 function showErrorState(message) {
     productMainImage.innerHTML = `<div class="error-state"><p>${message}</p><a href="./shop.html" class="btn btn-primary">Continue Shopping</a></div>`;
-    productInfo.style.display = "none";
+    const productInfoEl = document.getElementById("product-info");
+    if (productInfoEl) productInfoEl.style.display = "none";
     document.getElementById("related-products").style.display = "none";
 }
 

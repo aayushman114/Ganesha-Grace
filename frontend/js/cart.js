@@ -4,8 +4,9 @@
 // GANESH GRACE - SHOPPING CART
 // ============================================
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
-const CART_STORAGE_KEY = "ganesh-grace-cart";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
+const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
 
 // HTML elements
 const cartCount = document.getElementById("cart-count");
@@ -22,7 +23,9 @@ const productImages = {
     1: "cleanser.jpg",
     2: "moisturizer.jpg",
     3: "serum.jpg",
-    4: "sunscreen.jpg"
+    4: "sunscreen.jpg",
+    5: "pond.png",
+    6: "Ponds.png"
 };
 
 // ============================================
@@ -63,6 +66,10 @@ function saveCart() {
             CART_STORAGE_KEY,
             JSON.stringify(Array.from(cart.entries()))
         );
+        // Also update global cart count
+        if (typeof window.updateCartCount === "function") {
+            window.updateCartCount();
+        }
         return true;
     } catch (error) {
         console.error("Unable to save cart:", error);

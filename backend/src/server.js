@@ -9,10 +9,32 @@ require("dotenv").config();
 const prisma = require("./config/prisma");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 app.use(cors({
-    origin: ["http://127.0.0.1:5500", "http://localhost:5500"],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        // Allow any localhost/127.0.0.1 port for development
+        const allowedOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+        if (allowedOrigin.test(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow specific production origins
+        const productionOrigins = [
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "http://127.0.0.1:5501",
+            "http://localhost:5501"
+        ];
+        if (productionOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -207,6 +229,162 @@ app.get("/api/products/:id", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Unable to retrieve product"
+        });
+    }
+});
+
+// ============================================
+// REVIEWS - GET PRODUCT REVIEWS
+// ============================================
+
+app.get("/api/products/:id/reviews", async (req, res) => {
+    const productId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(productId) || productId < 1) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid product ID"
+        });
+    }
+
+    try {
+        const reviews = await prisma.review.findMany({
+            where: {
+                productId,
+                isApproved: true
+            },
+            orderBy: { createdAt: "desc" },
+            include: {
+                user: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        res.json({
+            success: true,
+            data: reviews.map(r => ({
+                id: r.id,
+                rating: r.rating,
+                title: r.title,
+                comment: r.comment,
+                userName: r.user.name,
+                createdAt: r.createdAt
+            }))
+        });
+    } catch (error) {
+        console.error("Failed to fetch reviews:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Unable to retrieve reviews"
+        });
+    }
+});
+
+// ============================================
+// REVIEWS - ADD REVIEW (Authenticated)
+// ============================================
+
+app.post("/api/products/:id/reviews", async (req, res) => {
+    const productId = Number(req.params.id);
+    const { rating, title, comment } = req.body;
+
+    if (!Number.isSafeInteger(productId) || productId < 1) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid product ID"
+        });
+    }
+
+    // Validate rating
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return res.status(400).json({
+            success: false,
+            message: "Rating must be an integer between 1 and 5"
+        });
+    }
+
+    // Get user from session
+    const token = req.cookies?.session_token;
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "Please log in to add a review"
+        });
+    }
+
+    try {
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const session = await prisma.session.findUnique({
+            where: { tokenHash },
+            include: { user: true }
+        });
+
+        if (!session || session.expiresAt < new Date()) {
+            return res.status(401).json({
+                success: false,
+                message: "Session expired. Please log in again."
+            });
+        }
+
+        const userId = session.user.id;
+
+        // Check if product exists and is active
+        const product = await prisma.product.findFirst({
+            where: { id: productId, isActive: true }
+        });
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        // Check if user already reviewed this product
+        const existingReview = await prisma.review.findFirst({
+            where: { productId, userId }
+        });
+
+        if (existingReview) {
+            return res.status(400).json({
+                success: false,
+                message: "You have already reviewed this product"
+            });
+        }
+
+        // Create review
+        const review = await prisma.review.create({
+            data: {
+                productId,
+                userId,
+                rating,
+                title: title || null,
+                comment: comment || null,
+                isApproved: true // Auto-approve for now
+            }
+        });
+
+        // Update product average rating
+        const reviews = await prisma.review.findMany({
+            where: { productId, isApproved: true }
+        });
+        const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        await prisma.product.update({
+            where: { id: productId },
+            data: { rating: Math.round(avgRating * 10) / 10 }
+        });
+
+        res.json({
+            success: true,
+            message: "Review added successfully",
+            data: review
+        });
+    } catch (error) {
+        console.error("Failed to add review:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Unable to add review"
         });
     }
 });
@@ -2225,7 +2403,7 @@ app.delete("/api/admin/brands/:id", async (req, res) => {
 // START SERVER
 // ============================================
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Ganesh Grace API running at http://localhost:${PORT}`);
 });
 
@@ -3096,7 +3274,8 @@ app.post("/api/auth/register", async (req, res) => {
                 name: cleanName,
                 email: cleanEmail,
                 passwordHash,
-                role: "CUSTOMER"
+                role: "CUSTOMER",
+                updatedAt: new Date()
             },
             select: {
                 id: true,
@@ -3173,6 +3352,19 @@ app.post("/api/auth/login", async (req, res) => {
                 message: "Invalid email or password."
             });
         }
+
+        // Clear any existing session cookie first (prevents admin/customer conflict)
+        res.clearCookie("gg_session", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/"
+        });
+
+        // Delete any existing sessions for this user (single session per user)
+        await prisma.session.deleteMany({
+            where: { userId: user.id }
+        });
 
         // Generate a random session token.
         const sessionToken = randomBytes(32).toString("hex");

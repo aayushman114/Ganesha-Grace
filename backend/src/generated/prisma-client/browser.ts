@@ -53,6 +53,11 @@ export type session = Prisma.sessionModel
  */
 export type user = Prisma.userModel
 /**
+ * Model review
+ * 
+ */
+export type review = Prisma.reviewModel
+/**
  * Model heroBanner
  * 
  */

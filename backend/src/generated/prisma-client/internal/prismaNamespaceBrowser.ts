@@ -58,6 +58,7 @@ export const ModelName = {
   product: 'product',
   session: 'session',
   user: 'user',
+  review: 'review',
   heroBanner: 'heroBanner'
 } as const
 
@@ -184,6 +185,21 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const ReviewScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  userId: 'userId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  isApproved: 'isApproved',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
 export const HeroBannerScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -279,6 +295,14 @@ export const userOrderByRelevanceFieldEnum = {
 } as const
 
 export type userOrderByRelevanceFieldEnum = (typeof userOrderByRelevanceFieldEnum)[keyof typeof userOrderByRelevanceFieldEnum]
+
+
+export const reviewOrderByRelevanceFieldEnum = {
+  title: 'title',
+  comment: 'comment'
+} as const
+
+export type reviewOrderByRelevanceFieldEnum = (typeof reviewOrderByRelevanceFieldEnum)[keyof typeof reviewOrderByRelevanceFieldEnum]
 
 
 export const heroBannerOrderByRelevanceFieldEnum = {

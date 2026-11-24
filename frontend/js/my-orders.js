@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 document.addEventListener("DOMContentLoaded", loadOrders);
 
@@ -25,7 +26,7 @@ async function loadOrders() {
         const result = await response.json();
 
         if (response.status === 401) {
-            window.location.href = "login.html";
+            window.location.href = "login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
             return;
         }
 

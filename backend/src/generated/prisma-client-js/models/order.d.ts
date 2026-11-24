@@ -414,7 +414,7 @@ export type orderCreateInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
     user?: Prisma.userCreateNestedOneWithoutOrderInput;
@@ -436,7 +436,7 @@ export type orderUncheckedCreateInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     userId?: number | null;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
@@ -501,7 +501,7 @@ export type orderCreateManyInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     userId?: number | null;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
@@ -715,7 +715,7 @@ export type orderCreateWithoutOrderitemInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
     user?: Prisma.userCreateNestedOneWithoutOrderInput;
@@ -736,7 +736,7 @@ export type orderUncheckedCreateWithoutOrderitemInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     userId?: number | null;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
@@ -810,7 +810,7 @@ export type orderCreateWithoutUserInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
     orderitem?: Prisma.orderitemCreateNestedManyWithoutOrderInput;
@@ -831,7 +831,7 @@ export type orderUncheckedCreateWithoutUserInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
     orderitem?: Prisma.orderitemUncheckedCreateNestedManyWithoutOrderInput;
@@ -897,7 +897,7 @@ export type orderCreateManyUserInput = {
     paymentStatus?: string;
     status?: string;
     createdAt?: Date | string;
-    updatedAt: Date | string;
+    updatedAt?: Date | string;
     idempotencyKey?: string | null;
     idempotencyRequestHash?: string | null;
 };

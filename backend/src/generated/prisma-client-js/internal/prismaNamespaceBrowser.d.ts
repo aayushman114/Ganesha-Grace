@@ -33,6 +33,7 @@ export declare const ModelName: {
     readonly product: 'product';
     readonly session: 'session';
     readonly user: 'user';
+    readonly review: 'review';
     readonly heroBanner: 'heroBanner';
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -129,6 +130,18 @@ export declare const UserScalarFieldEnum: {
     readonly updatedAt: 'updatedAt';
 };
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+export declare const ReviewScalarFieldEnum: {
+    readonly id: 'id';
+    readonly productId: 'productId';
+    readonly userId: 'userId';
+    readonly rating: 'rating';
+    readonly title: 'title';
+    readonly comment: 'comment';
+    readonly isApproved: 'isApproved';
+    readonly createdAt: 'createdAt';
+    readonly updatedAt: 'updatedAt';
+};
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum];
 export declare const HeroBannerScalarFieldEnum: {
     readonly id: 'id';
     readonly title: 'title';
@@ -196,6 +209,11 @@ export declare const userOrderByRelevanceFieldEnum: {
     readonly role: 'role';
 };
 export type userOrderByRelevanceFieldEnum = (typeof userOrderByRelevanceFieldEnum)[keyof typeof userOrderByRelevanceFieldEnum];
+export declare const reviewOrderByRelevanceFieldEnum: {
+    readonly title: 'title';
+    readonly comment: 'comment';
+};
+export type reviewOrderByRelevanceFieldEnum = (typeof reviewOrderByRelevanceFieldEnum)[keyof typeof reviewOrderByRelevanceFieldEnum];
 export declare const heroBannerOrderByRelevanceFieldEnum: {
     readonly title: 'title';
     readonly subtitle: 'subtitle';

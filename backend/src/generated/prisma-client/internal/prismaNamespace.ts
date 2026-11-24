@@ -404,6 +404,7 @@ export const ModelName = {
   product: 'product',
   session: 'session',
   user: 'user',
+  review: 'review',
   heroBanner: 'heroBanner'
 } as const
 
@@ -420,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "brand" | "category" | "order" | "orderitem" | "product" | "session" | "user" | "heroBanner"
+    modelProps: "brand" | "category" | "order" | "orderitem" | "product" | "session" | "user" | "review" | "heroBanner"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -886,6 +887,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    review: {
+      payload: Prisma.$reviewPayload<ExtArgs>
+      fields: Prisma.reviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.reviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.reviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        findFirst: {
+          args: Prisma.reviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.reviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        findMany: {
+          args: Prisma.reviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>[]
+        }
+        create: {
+          args: Prisma.reviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        createMany: {
+          args: Prisma.reviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.reviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        update: {
+          args: Prisma.reviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.reviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.reviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.reviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$reviewPayload>
+        }
+        aggregate: {
+          args: Prisma.ReviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReview>
+        }
+        groupBy: {
+          args: Prisma.reviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.reviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewCountAggregateOutputType> | number
+        }
+      }
+    }
     heroBanner: {
       payload: Prisma.$heroBannerPayload<ExtArgs>
       fields: Prisma.heroBannerFieldRefs
@@ -1098,6 +1165,21 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const ReviewScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  userId: 'userId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  isApproved: 'isApproved',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
 export const HeroBannerScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1193,6 +1275,14 @@ export const userOrderByRelevanceFieldEnum = {
 } as const
 
 export type userOrderByRelevanceFieldEnum = (typeof userOrderByRelevanceFieldEnum)[keyof typeof userOrderByRelevanceFieldEnum]
+
+
+export const reviewOrderByRelevanceFieldEnum = {
+  title: 'title',
+  comment: 'comment'
+} as const
+
+export type reviewOrderByRelevanceFieldEnum = (typeof reviewOrderByRelevanceFieldEnum)[keyof typeof reviewOrderByRelevanceFieldEnum]
 
 
 export const heroBannerOrderByRelevanceFieldEnum = {
@@ -1410,6 +1500,7 @@ export type GlobalOmitConfig = {
   product?: Prisma.productOmit
   session?: Prisma.sessionOmit
   user?: Prisma.userOmit
+  review?: Prisma.reviewOmit
   heroBanner?: Prisma.heroBannerOmit
 }
 

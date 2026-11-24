@@ -1,15 +1,20 @@
-const AUTH_STATUS_API = "http://127.0.0.1:3000/api";
-const CART_STORAGE_KEY = "ganesh-grace-cart";
+// Use centralized config (loaded via config.js script)
+const AUTH_STATUS_API = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
+const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
 
-document.addEventListener("DOMContentLoaded", initializeAuthStatus);
-document.addEventListener("DOMContentLoaded", initializeCartCount);
+// Run immediately (scripts have defer, so DOM is ready)
+initializeAuthStatus();
+initializeCartCount();
 
 async function initializeAuthStatus() {
     const authStatus = document.getElementById("auth-status");
     const logoutButton = document.getElementById("logout-button");
+    const myOrdersLink = document.getElementById("my-orders-link");
+    const adminLink = document.getElementById("admin-link");
 
     // Pages without account controls do not need this script.
     if (!authStatus || !logoutButton) {
+        console.log("[auth-status] Required elements not found, skipping");
         return;
     }
 
@@ -20,60 +25,91 @@ async function initializeAuthStatus() {
         });
 
         if (!response.ok) {
-            showLoggedOutState(authStatus, logoutButton);
+            console.log("[auth-status] Not logged in (response not ok)");
+            showLoggedOutState(authStatus, logoutButton, myOrdersLink, adminLink);
             return;
         }
 
         const result = await response.json();
 
         if (!result.success || !result.data) {
-            showLoggedOutState(authStatus, logoutButton);
+            console.log("[auth-status] Not logged in (no data)");
+            showLoggedOutState(authStatus, logoutButton, myOrdersLink, adminLink);
             return;
         }
 
+        console.log("[auth-status] Logged in as:", result.data.name, result.data.role);
         showLoggedInState(
             authStatus,
             logoutButton,
+            myOrdersLink,
+            adminLink,
             result.data
         );
 
     } catch (error) {
-        console.error("Unable to check login status:", error);
+        console.error("[auth-status] Unable to check login status:", error);
 
         // Keep login and registration links available if the API is offline.
-        showLoggedOutState(authStatus, logoutButton);
+        showLoggedOutState(authStatus, logoutButton, myOrdersLink, adminLink);
     }
 
     logoutButton.addEventListener("click", handleLogout);
 }
 
-function showLoggedOutState(authStatus, logoutButton) {
+function showLoggedOutState(authStatus, logoutButton, myOrdersLink, adminLink) {
     authStatus.replaceChildren();
 
     const loginLink = document.createElement("a");
     loginLink.href = "./login.html";
+    loginLink.id = "account-link";
     loginLink.textContent = "Log In";
 
     const registerLink = document.createElement("a");
     registerLink.href = "./register.html";
+    registerLink.id = "register-link";
     registerLink.textContent = "Create Account";
 
     authStatus.append(loginLink, registerLink);
 
     logoutButton.hidden = true;
+
+    // Hide My Orders link when logged out
+    if (myOrdersLink) {
+        myOrdersLink.hidden = true;
+    }
+
+    // Hide admin link when logged out
+    if (adminLink) {
+        adminLink.hidden = true;
+    }
 }
 
-function showLoggedInState(authStatus, logoutButton, user) {
+function showLoggedInState(authStatus, logoutButton, myOrdersLink, adminLink, user) {
     authStatus.replaceChildren();
 
     const accountLink = document.createElement("a");
-    accountLink.href = "./account.html";
+    accountLink.href = "./my-orders.html";
     accountLink.className = "account-name";
     accountLink.textContent = `Hello, ${user.name}`;
 
     authStatus.appendChild(accountLink);
 
     logoutButton.hidden = false;
+
+    // Show My Orders link when logged in
+    if (myOrdersLink) {
+        myOrdersLink.hidden = false;
+    }
+
+    // Show admin link for admin users
+    if (adminLink) {
+        if (user.role === "ADMIN") {
+            adminLink.hidden = false;
+        } else {
+            adminLink.hidden = true;
+        }
+    }
 }
 
 async function handleLogout() {
@@ -124,3 +160,6 @@ function initializeCartCount() {
         cartCount.textContent = 0;
     }
 }
+
+// Export for other scripts to use
+window.updateCartCount = initializeCartCount;

@@ -1,4 +1,5 @@
-const ORDER_API_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const ORDER_API_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 document.addEventListener("DOMContentLoaded", loadOrderConfirmation);
 
@@ -88,7 +89,7 @@ function renderOrder(order) {
     const itemsContainer = document.getElementById("order-items");
     itemsContainer.replaceChildren();
 
-    for (const item of order.items) {
+    for (const item of order.orderitem) {
         const row = document.createElement("div");
         row.className = "order-item-row";
 

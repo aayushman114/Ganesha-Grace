@@ -4,7 +4,8 @@
 // GANESHA GRACE - SHOP PAGE
 // ============================================
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 const currentYear = document.getElementById("current-year");
 const cartCount = document.getElementById("cart-count");
@@ -36,8 +37,8 @@ const clearAllFiltersBtn = document.getElementById("clear-all-filters");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 const shopSidebar = document.getElementById("shop-sidebar");
 
-const CART_STORAGE_KEY = "ganesh-grace-cart";
 const PRODUCTS_PER_PAGE = 12;
+const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
 
 let cart = new Map();
 let allCategories = [];
@@ -572,17 +573,37 @@ function renderProductCard(product) {
     addToCartBtn.className = "add-to-cart";
     addToCartBtn.type = "button";
     addToCartBtn.textContent = "Add to Cart";
-    addToCartBtn.addEventListener("click", () => addToCart(product.id));
+    addToCartBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        addToCart(product.id);
+    });
 
     const buyNowBtn = document.createElement("button");
     buyNowBtn.className = "buy-now";
     buyNowBtn.type = "button";
-    buyNowBtn.textContent = "Buy Now";
-    buyNowBtn.addEventListener("click", () => buyNow(product.id));
+    buyNowBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7H7l-2 8h16l-2-8z"></path>
+            <circle cx="11" cy="16" r="1"></circle>
+            <circle cx="19" cy="16" r="1"></circle>
+        </svg>
+        Buy Now
+    `;
+    buyNowBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        buyNow(product.id);
+    });
 
     actions.append(addToCartBtn, buyNowBtn);
     info.append(brand, name, rating, priceRow, actions);
     card.append(image, info);
+
+    // Make card clickable to go to product detail page
+    card.style.cursor = "pointer";
+    card.addEventListener("click", () => {
+        window.location.href = `./product.html?id=${product.id}`;
+    });
+
     productGrid.appendChild(card);
 }
 

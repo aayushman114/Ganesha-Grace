@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://127.0.0.1:3002/api/products\")",
+      "Bash(findstr :3002)",
+      "Bash(findstr :5501)",
+      "Bash(curl -s http://127.0.0.1:3002/api/products)",
+      "Bash(kill 6452)",
+      "Bash(PORT=3002 node src/server.js)",
+      "Bash(taskkill /F /PID 6452)",
+      "Bash(powershell -Command \"Stop-Process -Id 6452 -Force\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3002 | Select-Object -ExpandProperty OwningProcess\")",
+      "Bash(xargs -I {} powershell -Command \"Stop-Process -Id {} -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 17040 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 17720 -Force\")",
+      "Bash(curl -s http://127.0.0.1:5501/index.html)",
+      "Bash(curl -s http://127.0.0.1:5501/checkout.html)",
+      "Bash(curl -s http://127.0.0.1:5501/order-confirmation.html?orderNumber=GG-1795515642548-E55B85A4)",
+      "Bash(curl -s http://127.0.0.1:5501/product.html?id=1)",
+      "Bash(curl -s http://127.0.0.1:3002/api/admin/dashboard -b admin_cookies2.txt)",
+      "Bash(curl -s http://127.0.0.1:5501/my-orders.html)",
+      "Bash(curl -s http://127.0.0.1:5501/admin-login.html)",
+      "Bash(curl -s http://127.0.0.1:5501/admin.html)"
+    ]
+  }
+}

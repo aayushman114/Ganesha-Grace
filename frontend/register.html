@@ -6,59 +6,18 @@
 
     <title>Create Account | Ganesha Grace</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
+
+    <script src="./js/config.js"></script>
+    <script src="./js/register.js" defer></script>
 </head>
 
 <body>
-
-    <header class="site-header">
+    <header class="site-header auth-header">
         <div class="header-top">
             <a class="logo" href="./index.html" aria-label="Ganesha Grace Home">
                 Ganesha Grace
             </a>
-
-            <div class="header-search" role="search">
-                <form id="header-search-form" action="./shop.html" method="get">
-                    <label for="header-search-input" class="visually-hidden">Search products</label>
-                    <input
-                        type="search"
-                        id="header-search-input"
-                        name="search"
-                        placeholder="Search products..."
-                        autocomplete="off"
-                    >
-                    <button type="submit" class="search-submit" aria-label="Search">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </button>
-                </form>
-            </div>
-
-            <div class="header-actions">
-                <div id="auth-status" class="auth-status">
-                    <a href="./login.html" id="account-link">Log In</a>
-                    <a href="./register.html" id="register-link">Create Account</a>
-                </div>
-
-                <button id="logout-button" class="logout-button" hidden>
-                    Log Out
-                </button>
-
-                <a id="my-orders-link" class="header-link" href="./my-orders.html" aria-label="My Orders">
-                    My Orders
-                </a>
-
-                <a class="cart-link" href="./cart.html" aria-label="Shopping cart">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                    </svg>
-                    <span id="cart-count" class="cart-count-badge">0</span>
-                </a>
-            </div>
         </div>
     </header>
 
@@ -140,7 +99,5 @@
 
         <a href="index.html" class="auth-home">Back to Home</a>
     </main>
-
-    <script src="js/register.js"></script>
 </body>
 </html>

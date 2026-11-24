@@ -1,5 +1,6 @@
 
-const API_BASE_URL = "http://127.0.0.1:3000/api";
+// Use centralized config (loaded via config.js script)
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Verify admin role before loading dashboard
@@ -9,14 +10,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             credentials: "include"
         });
         const result = await response.json();
-        
+
         if (!response.ok || !result.success || !result.data || result.data.role !== "ADMIN") {
-            window.location.href = "admin-login.html";
+            window.location.href = "admin-login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
             return;
         }
     } catch (error) {
         console.error("Admin auth check failed:", error);
-        window.location.href = "admin-login.html";
+        window.location.href = "admin-login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
         return;
     }
     const tableBody = document.getElementById("orders-table-body");
