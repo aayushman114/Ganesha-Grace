@@ -391,7 +391,32 @@ function initQuantitySelector() {
 // CART OPERATIONS
 // ============================================
 
-function addToCart(productId, quantity) {
+async function requireAuth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) return false;
+
+        const result = await response.json();
+        return result.success && result.data;
+    } catch (error) {
+        console.error("Auth check failed:", error);
+        return false;
+    }
+}
+
+async function addToCart(productId, quantity) {
+    // Check authentication first
+    const isAuthenticated = await requireAuth();
+
+    if (!isAuthenticated) {
+        window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+        return false;
+    }
+
     const currentQty = cart.get(productId) || 0;
     const newQty = currentQty + quantity;
     const maxStock = quantityInput.max ? parseInt(quantityInput.max) : 99;

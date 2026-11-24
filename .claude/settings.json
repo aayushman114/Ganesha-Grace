@@ -21,6 +21,9 @@
       "Bash(curl -s http://127.0.0.1:5501/my-orders.html)",
       "Bash(curl -s http://127.0.0.1:5501/admin-login.html)",
       "Bash(curl -s http://127.0.0.1:5501/admin.html)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\pujan\\.claude\\projects\\c--Users-pujan-OneDrive-Documents-Project-Ganesh-Grace\\memory"
     ]
   }
 }

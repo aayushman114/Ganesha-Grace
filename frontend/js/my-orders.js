@@ -97,7 +97,7 @@ function createOrderCard(order) {
     const itemsList = document.createElement("ul");
     itemsList.className = "order-items";
 
-    (Array.isArray(order.items) ? order.items : []).forEach(item => {
+    (Array.isArray(order.orderitem) ? order.orderitem : []).forEach(item => {
         const listItem = document.createElement("li");
 
         const itemName = document.createElement("span");

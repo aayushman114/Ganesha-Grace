@@ -38,7 +38,7 @@ const sidebarToggle = document.getElementById("sidebar-toggle");
 const shopSidebar = document.getElementById("shop-sidebar");
 
 const PRODUCTS_PER_PAGE = 12;
-const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
+// const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
 
 let cart = new Map();
 let allCategories = [];
@@ -99,7 +99,9 @@ function getProductImage(product) {
         1: "cleanser.jpg",
         2: "moisturizer.jpg",
         3: "serum.jpg",
-        4: "sunscreen.jpg"
+        4: "sunscreen.jpg",
+        5: "pond.png",
+        6: "Ponds.png"
     };
     return imageNames[product.id] || "placeholder.jpg";
 }
@@ -190,11 +192,13 @@ function renderCategoryTree(categories) {
         const item = document.createElement("li");
         item.className = "category-tree-item";
 
-        // Main category button
-        const mainBtn = document.createElement("button");
-        mainBtn.className = "category-tree-main";
-        mainBtn.type = "button";
-        mainBtn.dataset.mainSlug = mainCat.slug;
+        const hasChildren = mainCat.children && mainCat.children.length > 0;
+
+        // Main category LINK (redirects to shop.html with category filter)
+        const mainLink = document.createElement("a");
+        mainLink.className = "category-tree-link";
+        mainLink.href = `./shop.html?category=${mainCat.slug}`;
+        mainLink.setAttribute("aria-label", `Shop ${mainCat.name} (${mainCat.productCount} products)`);
 
         const icon = document.createElement("span");
         icon.textContent = getCategoryIcon(mainCat.slug);
@@ -208,27 +212,43 @@ function renderCategoryTree(categories) {
         count.className = "category-tree-child-count";
         count.textContent = mainCat.productCount;
 
-        const toggle = document.createElement("button");
-        toggle.className = "category-tree-toggle";
-        toggle.type = "button";
-        toggle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        mainLink.append(icon, name, count);
 
-        mainBtn.append(icon, name, count, toggle);
+        if (hasChildren) {
+            const toggleBtn = document.createElement("button");
+            toggleBtn.className = "category-tree-toggle";
+            toggleBtn.type = "button";
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.setAttribute("aria-label", `Toggle ${mainCat.name} subcategories`);
+            toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
 
-        // Subcategories list
-        const childrenList = document.createElement("ul");
-        childrenList.className = "category-tree-children";
+            toggleBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const childrenUl = item.querySelector(".category-tree-children");
+                const isExpanded = toggleBtn.getAttribute("aria-expanded") === "true";
 
-        if (mainCat.children && mainCat.children.length > 0) {
+                toggleBtn.setAttribute("aria-expanded", !isExpanded);
+                childrenUl.classList.toggle("expanded", !isExpanded);
+            });
+
+            mainLink.appendChild(toggleBtn);
+        }
+
+        item.appendChild(mainLink);
+
+        if (hasChildren) {
+            const childrenList = document.createElement("ul");
+            childrenList.className = "category-tree-children";
+
             mainCat.children.forEach(subCat => {
                 const childItem = document.createElement("li");
                 childItem.className = "category-tree-child";
 
-                const childBtn = document.createElement("button");
-                childBtn.className = "category-tree-child-btn";
-                childBtn.type = "button";
-                childBtn.dataset.subSlug = subCat.slug;
-                childBtn.dataset.parentSlug = mainCat.slug;
+                const childLink = document.createElement("a");
+                childLink.className = "category-tree-link";
+                childLink.href = `./shop.html?category=${subCat.slug}`;
+                childLink.setAttribute("aria-label", `Shop ${subCat.name} (${subCat.productCount} products)`);
 
                 const childName = document.createElement("span");
                 childName.textContent = subCat.name;
@@ -237,24 +257,14 @@ function renderCategoryTree(categories) {
                 childCount.className = "category-tree-child-count";
                 childCount.textContent = subCat.productCount;
 
-                childBtn.append(childName, childCount);
-                childBtn.addEventListener("click", () => filterBySubCategory(mainCat, subCat));
-
-                childItem.appendChild(childBtn);
+                childLink.append(childName, childCount);
+                childItem.appendChild(childLink);
                 childrenList.appendChild(childItem);
             });
+
+            item.appendChild(childrenList);
         }
 
-        // Toggle handler
-        mainBtn.addEventListener("click", (e) => {
-            if (e.target === toggle || e.target.closest('.category-tree-toggle')) {
-                mainBtn.classList.toggle("expanded");
-            } else {
-                filterByMainCategory(mainCat);
-            }
-        });
-
-        item.append(mainBtn, childrenList);
         categoryTree.appendChild(item);
     });
 }
@@ -611,24 +621,49 @@ function renderProductCard(product) {
 // CART FUNCTIONS
 // ============================================
 
-function addToCart(productId) {
-    const currentQty = cart.get(productId) || 0;
-    cart.set(productId, currentQty + 1);
-    saveCart();
-    updateCartCount();
+async function requireAuth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
 
-    const btn = event.target;
-    const originalText = btn.textContent;
-    btn.textContent = "Added!";
-    btn.style.background = "#22c55e";
-    btn.style.borderColor = "#22c55e";
-    btn.style.color = "#fff";
-    setTimeout(() => {
-        btn.textContent = originalText;
-        btn.style.background = "";
-        btn.style.borderColor = "";
-        btn.style.color = "";
-    }, 1500);
+        if (!response.ok) return false;
+
+        const result = await response.json();
+        return result.success && result.data;
+    } catch (error) {
+        console.error("Auth check failed:", error);
+        return false;
+    }
+}
+
+function addToCart(productId) {
+    // Check authentication first
+    requireAuth().then(isAuthenticated => {
+        if (!isAuthenticated) {
+            window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+        }
+
+        const currentQty = cart.get(productId) || 0;
+        cart.set(productId, currentQty + 1);
+        saveCart();
+        updateCartCount();
+
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Added!";
+        btn.style.background = "#22c55e";
+        btn.style.borderColor = "#22c55e";
+        btn.style.color = "#fff";
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = "";
+            btn.style.borderColor = "";
+            btn.style.color = "";
+        }, 1500);
+    });
 }
 
 function buyNow(productId) {

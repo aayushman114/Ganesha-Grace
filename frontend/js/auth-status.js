@@ -133,6 +133,10 @@ async function handleLogout() {
             return;
         }
 
+        // Clear cart on logout (use key from centralized config)
+        const cartStorageKey = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
+        localStorage.removeItem(cartStorageKey);
+
         window.location.href = "./index.html";
 
     } catch (error) {

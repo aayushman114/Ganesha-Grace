@@ -6,7 +6,7 @@
 
 // Use centralized config (loaded via config.js script)
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "http://127.0.0.1:3002/api";
-const CART_STORAGE_KEY = window.APP_CONFIG?.CART_STORAGE_KEY || "ganesh-grace-cart";
+// CART_STORAGE_KEY is already declared in auth-status.js, use from APP_CONFIG
 
 // HTML elements
 const cartCount = document.getElementById("cart-count");
@@ -121,6 +121,34 @@ async function initializeCart() {
     }
 
     updateCartCount();
+
+    // Check if user is authenticated before showing cart
+    try {
+        const authResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!authResponse.ok) {
+            // Not logged in - redirect to login page
+            window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname);
+            return;
+        }
+
+        const authResult = await authResponse.json();
+
+        if (!authResult.success || !authResult.data) {
+            // Not logged in - redirect to login page
+            window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname);
+            return;
+        }
+
+    } catch (error) {
+        console.error("Authentication check failed:", error);
+        // On error, redirect to login for safety
+        window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname);
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/products`);

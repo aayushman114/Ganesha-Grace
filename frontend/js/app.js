@@ -440,15 +440,37 @@ function getProductImage(product) {
 // SHOPPING CART FUNCTIONALITY
 // ============================================
 
+async function requireAuth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) return false;
+
+        const result = await response.json();
+        return result.success && result.data;
+    } catch (error) {
+        console.error("Auth check failed:", error);
+        return false;
+    }
+}
+
 function addToCart(productId) {
-    const currentQuantity = cart.get(productId) || 0;
+    // Check authentication first
+    requireAuth().then(isAuthenticated => {
+        if (!isAuthenticated) {
+            window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+        }
 
-    cart.set(productId, currentQuantity + 1);
-
-    saveCart();
-    updateCartCount();
-
-    console.log("Cart updated:", Array.from(cart.entries()));
+        const currentQuantity = cart.get(productId) || 0;
+        cart.set(productId, currentQuantity + 1);
+        saveCart();
+        updateCartCount();
+        console.log("Cart updated:", Array.from(cart.entries()));
+    });
 }
 
 function buyNow(productId) {
